@@ -3,7 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 import type { DecodedToken, LoginRequest } from '../types';
 import { authService } from '../services';
 import { emitToast } from '../components/ui/toastBus';
-import { registerForceLogoutListener } from './authBus';
+import { registerForceLogoutListener, SESSION_EXPIRED_MESSAGE } from './authBus';
 
 type Role = 'Admin' | 'Doctor' | 'Patient';
 
@@ -18,8 +18,6 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
 }
-
-const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please log in again.';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

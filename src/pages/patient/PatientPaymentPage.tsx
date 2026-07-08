@@ -119,7 +119,7 @@ export const PatientPaymentPage = () => {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="card text-center py-12">
-          <p className="text-gray-600">Appointment not found</p>
+          <p className="text-gray-600">{error || 'Appointment not found'}</p>
         </div>
       </div>
     );

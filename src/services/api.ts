@@ -1,4 +1,4 @@
-import { triggerForceLogout } from '../contexts/authBus';
+import { triggerForceLogout, SESSION_EXPIRED_MESSAGE } from '../contexts/authBus';
 
 const BASE_URL = 'http://localhost:5024';
 
@@ -58,7 +58,7 @@ export const apiFetch = async (path: string, options: RequestInit = {}, config: 
   if (res.status === 401 && !config.suppressSessionHandling) {
     if (!sessionExpiredHandled) {
       sessionExpiredHandled = true;
-      triggerForceLogout('Your session has expired. Please log in again.');
+      triggerForceLogout(SESSION_EXPIRED_MESSAGE);
     }
     throw new ApiError(401, { error: 'Session expired' });
   }
