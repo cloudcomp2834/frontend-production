@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { scheduleService } from '../../services';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { scheduleService, doctorService } from '../../services';
 import { ApiError } from '../../services/api';
-import type { DoctorScheduleDto, CreateDoctorScheduleRequest } from '../../types';
+import type { DoctorScheduleDto, CreateDoctorScheduleRequest, DoctorDto } from '../../types';
 
-export const DoctorSchedulePage = () => {
-  const { doctorId } = useAuth();
+export const AdminDoctorSchedulePage = () => {
+  const { doctorId } = useParams<{ doctorId: string }>();
+  const navigate = useNavigate();
+  const [doctor, setDoctor] = useState<DoctorDto | null>(null);
   const [schedules, setSchedules] = useState<DoctorScheduleDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,26 +18,33 @@ export const DoctorSchedulePage = () => {
     endTime: '',
   });
 
-  const loadSchedules = useCallback(async () => {
+  useEffect(() => {
+    if (doctorId) {
+      loadDoctorAndSchedules();
+    }
+  }, [doctorId]);
+
+  const loadDoctorAndSchedules = async () => {
     if (!doctorId) return;
     
     try {
-      const data = await scheduleService.getSchedules(doctorId);
-      setSchedules(data.sort((a, b) => 
+      const [doctorData, schedulesData] = await Promise.all([
+        doctorService.getById(parseInt(doctorId)),
+        scheduleService.getSchedules(parseInt(doctorId)),
+      ]);
+      
+      setDoctor(doctorData);
+      setSchedules(schedulesData.sort((a, b) => 
         new Date(a.date).getTime() - new Date(b.date).getTime()
       ));
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load schedules');
+        setError(err.data?.error || 'Failed to load data');
       }
     } finally {
       setLoading(false);
     }
-  }, [doctorId]);
-
-  useEffect(() => {
-    loadSchedules();
-  }, [loadSchedules]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +58,10 @@ export const DoctorSchedulePage = () => {
         startTime: formData.startTime + ':00',
         endTime: formData.endTime + ':00',
       };
-      await scheduleService.createSchedule(doctorId, scheduleData);
+      await scheduleService.createSchedule(parseInt(doctorId), scheduleData);
       setFormData({ date: '', startTime: '', endTime: '' });
       setShowAddForm(false);
-      await loadSchedules();
+      await loadDoctorAndSchedules();
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.data?.error || 'Failed to create schedule');
@@ -65,8 +74,8 @@ export const DoctorSchedulePage = () => {
     if (!confirm('Are you sure you want to delete this schedule slot?')) return;
 
     try {
-      await scheduleService.deleteSchedule(doctorId, scheduleId);
-      await loadSchedules();
+      await scheduleService.deleteSchedule(parseInt(doctorId), scheduleId);
+      await loadDoctorAndSchedules();
     } catch (err) {
       if (err instanceof ApiError) {
         alert(err.data?.error || 'Failed to delete schedule');
@@ -84,17 +93,32 @@ export const DoctorSchedulePage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Timetable</h1>
-          <p className="text-gray-600 mt-2">Manage your availability schedule</p>
-        </div>
+      {/* Header with Back Button */}
+      <div className="mb-6">
         <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="btn-primary"
+          onClick={() => navigate('/admin/doctors')}
+          className="text-primary hover:text-primary-dark mb-4 flex items-center"
         >
-          {showAddForm ? 'Cancel' : '+ Add Time Slot'}
+          ← Back to Doctors
         </button>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Manage Doctor Schedule
+            </h1>
+            {doctor && (
+              <p className="text-gray-600 mt-2">
+                {doctor.name} - {doctor.specialismName} at {doctor.hospitalName}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="btn-primary"
+          >
+            {showAddForm ? 'Cancel' : '+ Add Time Slot'}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -143,7 +167,7 @@ export const DoctorSchedulePage = () => {
                 />
               </div>
             </div>
-            <button type="submit" className="btn-primary">Create Schedule</button>
+            <button type="submit" className="btn-primary">Add Schedule</button>
           </form>
         </div>
       )}
@@ -151,7 +175,7 @@ export const DoctorSchedulePage = () => {
       <div className="card">
         {schedules.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            No schedules found. Add your first time slot to get started.
+            No schedules found. Add the first time slot for this doctor.
           </div>
         ) : (
           <div className="overflow-x-auto">

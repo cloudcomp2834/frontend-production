@@ -11,6 +11,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminDoctorsPage } from './pages/admin/AdminDoctorsPage';
 import { AdminAddDoctorPage } from './pages/admin/AdminAddDoctorPage';
+import { AdminDoctorSchedulePage } from './pages/admin/AdminDoctorSchedulePage';
 import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 
@@ -81,7 +82,7 @@ function App() {
               path="/admin/doctors/:doctorId/schedule"
               element={
                 <ProtectedRoute allowedRoles={['Admin']}>
-                  <DoctorSchedulePage />
+                  <AdminDoctorSchedulePage />
                 </ProtectedRoute>
               }
             />
