@@ -2,8 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { PublicOnlyRoute } from './components/PublicOnlyRoute';
 import { ToastProvider } from './components/ui/ToastProvider';
 import { ConfirmProvider } from './components/ui/ConfirmProvider';
+import { DASHBOARD_PATHS } from './utils/dashboardPaths';
 
 // Auth pages
 import { LoginPage } from './pages/LoginPage';
@@ -35,12 +37,7 @@ function HomePage() {
   const { isAuthenticated, role } = useAuth();
 
   if (isAuthenticated && role) {
-    const dashboardMap = {
-      Admin: '/admin',
-      Doctor: '/doctor',
-      Patient: '/patient',
-    };
-    return <Navigate to={dashboardMap[role]} replace />;
+    return <Navigate to={DASHBOARD_PATHS[role]} replace />;
   }
 
   return <Navigate to="/login" replace />;
@@ -56,8 +53,22 @@ function App() {
               <Routes>
             {/* Public routes */}
             <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            <Route
+              path="/login"
+              element={
+                <PublicOnlyRoute>
+                  <LoginPage />
+                </PublicOnlyRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicOnlyRoute>
+                  <RegisterPage />
+                </PublicOnlyRoute>
+              }
+            />
 
             {/* Admin routes */}
             <Route

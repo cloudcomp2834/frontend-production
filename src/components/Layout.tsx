@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { DASHBOARD_PATHS } from '../utils/dashboardPaths';
 
 interface LayoutProps {
   children: ReactNode;
@@ -18,12 +19,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   const getDashboardLink = () => {
     if (!role) return '/';
-    const dashboardMap = {
-      Admin: '/admin',
-      Doctor: '/doctor',
-      Patient: '/patient',
-    };
-    return dashboardMap[role];
+    return DASHBOARD_PATHS[role];
   };
 
   const handleBack = () => {

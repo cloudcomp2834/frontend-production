@@ -1,18 +1,13 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-
-const dashboardMap = {
-  Admin: '/admin',
-  Doctor: '/doctor',
-  Patient: '/patient',
-};
+import { DASHBOARD_PATHS } from '../utils/dashboardPaths';
 
 export const UnauthorizedPage = () => {
   const { isAuthenticated, role } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const homeLink = isAuthenticated && role ? dashboardMap[role] : '/login';
+  const homeLink = isAuthenticated && role ? DASHBOARD_PATHS[role] : '/login';
   const homeLabel = isAuthenticated && role ? 'Go to My Dashboard' : 'Go to Login';
 
   const handleGoBack = () => {

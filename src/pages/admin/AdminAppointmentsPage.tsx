@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { appointmentService } from '../../services';
 import { getErrorMessage } from '../../services/api';
 import type { AppointmentDto } from '../../types';
@@ -87,9 +86,6 @@ export const AdminAppointmentsPage = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Medical Concern
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -117,14 +113,6 @@ export const AdminAppointmentsPage = () => {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
                       {appointment.medicalConcern || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link
-                        to={`/admin/appointments/${appointment.appointmentId}`}
-                        className="text-primary hover:text-primary-dark"
-                      >
-                        View Details
-                      </Link>
                     </td>
                   </tr>
                 ))}

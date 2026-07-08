@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../services/api';
+import { DASHBOARD_PATHS } from '../utils/dashboardPaths';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -18,13 +19,7 @@ export const LoginPage = () => {
 
     try {
       const role = await login({ username, password });
-
-      const dashboardMap: Record<string, string> = {
-        Admin: '/admin',
-        Doctor: '/doctor',
-        Patient: '/patient',
-      };
-      navigate(dashboardMap[role]);
+      navigate(DASHBOARD_PATHS[role]);
     } catch (err) {
       const message = getErrorMessage(err, 'Invalid username or password');
       if (message) setError(message);
