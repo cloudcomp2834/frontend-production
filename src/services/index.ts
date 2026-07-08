@@ -20,6 +20,11 @@ import type {
   AppointmentTypeDto,
   UserDto,
   CreateUserRequest,
+  MedicalRecordDto,
+  MedicalRecordFileDto,
+  CompleteAppointmentRequest,
+  CompleteAppointmentResponse,
+  FilePresignedUrlResponse,
 } from '../types';
 
 // Auth
@@ -190,6 +195,21 @@ export const appointmentService = {
     });
     return data;
   },
+
+  complete: async (id: number, request: CompleteAppointmentRequest): Promise<CompleteAppointmentResponse> => {
+    const { data } = await apiFetch(`/api/appointment/${id}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+    return data;
+  },
+
+  markNoShow: async (id: number): Promise<AppointmentDto> => {
+    const { data } = await apiFetch(`/api/appointment/${id}/no-show`, {
+      method: 'PATCH',
+    });
+    return data;
+  },
 };
 
 // Payments
@@ -248,6 +268,36 @@ export const userService = {
       method: 'POST',
       body: JSON.stringify(userData),
     });
+    return data;
+  },
+};
+
+// Medical Records
+export const medicalRecordService = {
+  getById: async (medicalRecordId: number): Promise<MedicalRecordDto> => {
+    const { data } = await apiFetch(`/api/medical-records/${medicalRecordId}`);
+    return data;
+  },
+
+  uploadFiles: async (medicalRecordId: number, files: File[]): Promise<MedicalRecordFileDto[]> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+
+    const { data } = await apiFetch(`/api/medical-records/${medicalRecordId}/files`, {
+      method: 'POST',
+      body: formData,
+    });
+    return data;
+  },
+
+  getFilePresignedUrl: async (
+    recordFileId: number,
+    expiresInSeconds?: number
+  ): Promise<FilePresignedUrlResponse> => {
+    const query = buildQueryString({ expiresInSeconds });
+    const { data } = await apiFetch(
+      `/api/medical-records/files/${recordFileId}/presigned-url${query}`
+    );
     return data;
   },
 };

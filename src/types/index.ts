@@ -105,7 +105,7 @@ export interface AppointmentDto {
   doctorId: number;
   patientId: number;
   appointmentDate: string;
-  status: 'Scheduled' | 'Paid Scheduled' | 'Cancelled';
+  status: 'Scheduled' | 'Paid Scheduled' | 'Cancelled' | 'Completed' | 'No-show' | 'Expired';
   medicalConcern: string;
   startTime: string;
   endTime: string;
@@ -186,4 +186,38 @@ export interface CreateUserRequest {
 export interface ErrorResponse {
   error: string;
   errors?: Record<string, string[]>;
+}
+
+// Medical Record Types
+export interface MedicalRecordDto {
+  medicalRecordId: number;
+  appointmentId: number;
+  diagnose: string;
+  createdAt: string;
+  note: string;
+  files: MedicalRecordFileDto[];
+}
+
+export interface MedicalRecordFileDto {
+  recordFileId: number;
+  medicalRecordId: number;
+  fileName: string;
+  fileType: string;
+  s3ObjectKey: string;
+  presignedUrl?: string;
+}
+
+export interface CompleteAppointmentRequest {
+  diagnose: string;
+  note: string;
+}
+
+export interface CompleteAppointmentResponse {
+  appointment: AppointmentDto;
+  medicalRecord: MedicalRecordDto;
+}
+
+export interface FilePresignedUrlResponse {
+  fileUrl: string;
+  expiresInSeconds: number;
 }
