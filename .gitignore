@@ -5,3 +5,4 @@
 *.userosscache
 *.sln.docstates
 .DS_Store
+FRONTEND_SPEC.md
