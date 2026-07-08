@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { scheduleService, doctorService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 import type { DoctorScheduleDto, CreateDoctorScheduleRequest, DoctorDto } from '../../types';
@@ -41,9 +41,8 @@ export const AdminDoctorSchedulePage = () => {
         new Date(a.date).getTime() - new Date(b.date).getTime()
       ));
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load data');
-      }
+      const message = getErrorMessage(err, 'Failed to load data');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }
@@ -66,9 +65,8 @@ export const AdminDoctorSchedulePage = () => {
       setShowAddForm(false);
       await loadDoctorAndSchedules();
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to create schedule');
-      }
+      const message = getErrorMessage(err, 'Failed to create schedule');
+      if (message) setError(message);
     }
   };
 
@@ -84,9 +82,8 @@ export const AdminDoctorSchedulePage = () => {
       await scheduleService.deleteSchedule(parseInt(doctorId), scheduleId);
       await loadDoctorAndSchedules();
     } catch (err) {
-      if (err instanceof ApiError) {
-        toast.error(err.data?.error || 'Failed to delete schedule');
-      }
+      const message = getErrorMessage(err, 'Failed to delete schedule');
+      if (message) toast.error(message);
     }
   };
 

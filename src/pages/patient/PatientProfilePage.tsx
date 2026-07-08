@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { patientService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
 import type { PatientUserDto } from '../../types';
 
 export const PatientProfilePage = () => {
@@ -23,9 +23,8 @@ export const PatientProfilePage = () => {
       const data = await patientService.getProfile(patientId);
       setProfile(data);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load profile');
-      }
+      const message = getErrorMessage(err, 'Failed to load profile');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }

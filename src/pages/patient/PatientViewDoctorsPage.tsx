@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { referenceService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
 import type { DoctorDirectoryDto } from '../../types';
 
 export const PatientViewDoctorsPage = () => {
@@ -20,9 +20,8 @@ export const PatientViewDoctorsPage = () => {
       // Filter only active doctors
       setDoctors(data.filter(d => d.status === 'Active'));
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load doctors');
-      }
+      const message = getErrorMessage(err, 'Failed to load doctors');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }

@@ -30,10 +30,14 @@ import type {
 // Auth
 export const authService = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const { data } = await apiFetch('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
+    const { data } = await apiFetch(
+      '/api/auth/login',
+      {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      },
+      { suppressSessionHandling: true }
+    );
     return data;
   },
 };

@@ -1,11 +1,13 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doctorService, referenceService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
 import type { CreateDoctorWithUserRequest, HospitalDto, SpecialismDto } from '../../types';
 
 export const AdminAddDoctorPage = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [hospitals, setHospitals] = useState<HospitalDto[]>([]);
   const [specialisms, setSpecialisms] = useState<SpecialismDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,7 +46,8 @@ export const AdminAddDoctorPage = () => {
         setFormData(prev => ({ ...prev, specialistId: specialismsData[0].specialistId }));
       }
     } catch (err) {
-      console.error('Failed to load reference data:', err);
+      const message = getErrorMessage(err, 'Failed to load reference data');
+      if (message) toast.error(message);
     }
   };
 
@@ -65,9 +68,8 @@ export const AdminAddDoctorPage = () => {
       await doctorService.create(formData);
       navigate('/admin/doctors');
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to create doctor');
-      }
+      const message = getErrorMessage(err, 'Failed to create doctor');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }

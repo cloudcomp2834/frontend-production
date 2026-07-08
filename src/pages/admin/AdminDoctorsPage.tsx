@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { doctorService, referenceService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 import type { DoctorDto, HospitalDto, SpecialismDto } from '../../types';
@@ -30,9 +30,8 @@ export const AdminDoctorsPage = () => {
       setHospitals(hospitalsData);
       setSpecialisms(specialismsData);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load doctors');
-      }
+      const message = getErrorMessage(err, 'Failed to load doctors');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }
@@ -44,9 +43,8 @@ export const AdminDoctorsPage = () => {
       await doctorService.updateStatus(doctorId, newStatus);
       await loadData();
     } catch (err) {
-      if (err instanceof ApiError) {
-        toast.error(err.data?.error || 'Failed to update doctor status');
-      }
+      const message = getErrorMessage(err, 'Failed to update doctor status');
+      if (message) toast.error(message);
     }
   };
 
@@ -62,9 +60,8 @@ export const AdminDoctorsPage = () => {
       await doctorService.delete(doctorId);
       await loadData();
     } catch (err) {
-      if (err instanceof ApiError) {
-        toast.error(err.data?.error || 'Failed to delete doctor');
-      }
+      const message = getErrorMessage(err, 'Failed to delete doctor');
+      if (message) toast.error(message);
     }
   };
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { appointmentService, medicalRecordService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import type { DoctorAppointmentDto } from '../../types';
 
@@ -39,9 +39,8 @@ export const DoctorAppointmentsPage = () => {
         new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
       ));
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load appointments');
-      }
+      const message = getErrorMessage(err, 'Failed to load appointments');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }
@@ -126,9 +125,8 @@ export const DoctorAppointmentsPage = () => {
       // Close modal
       handleCloseModal();
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to process appointment');
-      }
+      const message = getErrorMessage(err, 'Failed to process appointment');
+      if (message) setError(message);
     } finally {
       setSubmitting(false);
       setUploadingFiles(false);

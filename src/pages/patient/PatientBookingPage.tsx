@@ -2,13 +2,15 @@ import { useState, useEffect, useCallback, type FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { referenceService, scheduleService, appointmentService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
 import type { DoctorDirectoryDto, AppointmentTypeDto, DoctorScheduleDto, CreateAppointmentRequest } from '../../types';
 
 export const PatientBookingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { patientId } = useAuth();
+  const toast = useToast();
   const [doctors, setDoctors] = useState<DoctorDirectoryDto[]>([]);
   const [appointmentTypes, setAppointmentTypes] = useState<AppointmentTypeDto[]>([]);
   const [schedules, setSchedules] = useState<DoctorScheduleDto[]>([]);
@@ -50,7 +52,8 @@ export const PatientBookingPage = () => {
         setFormData(prev => ({ ...prev, appointmentCategoryId: typesData[0].appointmentCategoryId }));
       }
     } catch (err) {
-      console.error('Failed to load data:', err);
+      const message = getErrorMessage(err, 'Failed to load booking data');
+      if (message) toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -70,7 +73,8 @@ export const PatientBookingPage = () => {
       );
       setSchedules(data);
     } catch (err) {
-      console.error('Failed to load schedules:', err);
+      const message = getErrorMessage(err, 'Failed to load available time slots');
+      if (message) toast.error(message);
       setSchedules([]);
     }
   }, [formData.doctorId, formData.appointmentDate]);
@@ -124,9 +128,8 @@ export const PatientBookingPage = () => {
       await appointmentService.create(requestData);
       navigate('/patient/appointments');
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to book appointment');
-      }
+      const message = getErrorMessage(err, 'Failed to book appointment');
+      if (message) setError(message);
     } finally {
       setSubmitting(false);
     }

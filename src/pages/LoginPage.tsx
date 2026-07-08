@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ApiError } from '../services/api';
+import { getErrorMessage } from '../services/api';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -17,22 +17,17 @@ export const LoginPage = () => {
     setLoading(true);
 
     try {
-      await login({ username, password });
-      
-      // The AuthContext will set the role, navigate based on it
-      const role = localStorage.getItem('role');
+      const role = await login({ username, password });
+
       const dashboardMap: Record<string, string> = {
         Admin: '/admin',
         Doctor: '/doctor',
         Patient: '/patient',
       };
-      navigate(dashboardMap[role || 'Patient']);
+      navigate(dashboardMap[role]);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Invalid username or password');
-      } else {
-        setError('An error occurred. Please try again.');
-      }
+      const message = getErrorMessage(err, 'Invalid username or password');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }

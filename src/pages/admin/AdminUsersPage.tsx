@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { userService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
 import type { UserDto } from '../../types';
 
 export const AdminUsersPage = () => {
@@ -17,9 +17,8 @@ export const AdminUsersPage = () => {
       const data = await userService.getAll();
       setUsers(data);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load users');
-      }
+      const message = getErrorMessage(err, 'Failed to load users');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }

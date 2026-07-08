@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { appointmentService, paymentService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import type { AppointmentDto } from '../../types';
 
@@ -34,9 +34,8 @@ export const PatientPaymentPage = () => {
         await loadPaymentUrls();
       }
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load appointment');
-      }
+      const message = getErrorMessage(err, 'Failed to load appointment');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }
@@ -53,7 +52,8 @@ export const PatientPaymentPage = () => {
       if (invoiceData.invoiceUrl) setInvoiceUrl(invoiceData.invoiceUrl);
       if (receiptData.receiptUrl) setReceiptUrl(receiptData.receiptUrl);
     } catch (err) {
-      console.error('Failed to load payment URLs:', err);
+      const message = getErrorMessage(err, 'Failed to load payment details');
+      if (message) toast.error(message);
     }
   };
 
@@ -100,9 +100,8 @@ export const PatientPaymentPage = () => {
       // Show success message
       toast.success('Payment receipt uploaded successfully! Your appointment is now confirmed.');
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to upload receipt');
-      }
+      const message = getErrorMessage(err, 'Failed to upload receipt');
+      if (message) setError(message);
     } finally {
       setUploading(false);
     }

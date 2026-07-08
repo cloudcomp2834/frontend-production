@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { appointmentService, medicalRecordService } from '../../services';
-import { apiFetch, ApiError } from '../../services/api';
+import { apiFetch, ApiError, getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 import type { AppointmentDto, MedicalRecordDto } from '../../types';
@@ -34,9 +34,8 @@ export const PatientAppointmentsPage = () => {
         new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
       ));
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load appointments');
-      }
+      const message = getErrorMessage(err, 'Failed to load appointments');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }
@@ -53,9 +52,8 @@ export const PatientAppointmentsPage = () => {
       await appointmentService.cancel(appointmentId);
       await loadAppointments();
     } catch (err) {
-      if (err instanceof ApiError) {
-        toast.error(err.data?.error || 'Failed to cancel appointment');
-      }
+      const message = getErrorMessage(err, 'Failed to cancel appointment');
+      if (message) toast.error(message);
     }
   };
 
@@ -74,11 +72,8 @@ export const PatientAppointmentsPage = () => {
     } catch (err) {
       if (err instanceof ApiError && err.status === 404 && String(err.data?.error || '').includes('not found for this appointment')) {
         setMedicalRecordStatus('not_created');
-      } else if (err instanceof ApiError) {
-        setMedicalRecordError(err.data?.error || 'Failed to load medical record');
-        setMedicalRecordStatus('error');
       } else {
-        setMedicalRecordError('Failed to load medical record');
+        setMedicalRecordError(getErrorMessage(err, 'Failed to load medical record') || 'Failed to load medical record');
         setMedicalRecordStatus('error');
       }
     }
@@ -99,9 +94,8 @@ export const PatientAppointmentsPage = () => {
       const { fileUrl } = await medicalRecordService.getFilePresignedUrl(recordFileId);
       window.open(fileUrl, '_blank');
     } catch (err) {
-      if (err instanceof ApiError) {
-        toast.error(err.data?.error || 'Failed to get download URL');
-      }
+      const message = getErrorMessage(err, 'Failed to get download URL');
+      if (message) toast.error(message);
     }
   };
 

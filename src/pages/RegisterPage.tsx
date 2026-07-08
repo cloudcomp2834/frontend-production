@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { patientService } from '../services';
-import { ApiError } from '../services/api';
+import { getErrorMessage } from '../services/api';
 import type { CreatePatientUserRequest } from '../types';
 
 export const RegisterPage = () => {
@@ -46,11 +46,8 @@ export const RegisterPage = () => {
         navigate('/login');
       }, 2000);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || err.data?.errors?.ICPassport?.[0] || 'Registration failed');
-      } else {
-        setError('An error occurred. Please try again.');
-      }
+      const message = getErrorMessage(err, 'Registration failed');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }

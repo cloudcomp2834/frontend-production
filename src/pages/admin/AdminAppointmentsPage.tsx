@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { appointmentService } from '../../services';
-import { ApiError } from '../../services/api';
+import { getErrorMessage } from '../../services/api';
 import type { AppointmentDto } from '../../types';
 
 export const AdminAppointmentsPage = () => {
@@ -20,9 +20,8 @@ export const AdminAppointmentsPage = () => {
         new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
       ));
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load appointments');
-      }
+      const message = getErrorMessage(err, 'Failed to load appointments');
+      if (message) setError(message);
     } finally {
       setLoading(false);
     }
