@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 export const PatientDashboard = () => {
   const menuItems = [
     {
+      title: 'View Doctors',
+      description: 'Browse our specialist doctors',
+      link: '/patient/doctors',
+      icon: '👨‍⚕️',
+      color: 'bg-pantai-600',
+    },
+    {
       title: 'Book Appointment',
       description: 'Schedule a new appointment with a doctor',
       link: '/patient/book',
@@ -32,7 +39,7 @@ export const PatientDashboard = () => {
         <p className="text-gray-600 mt-2">Welcome to Pantai Hospital Portal</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {menuItems.map((item) => (
           <Link
             key={item.link}

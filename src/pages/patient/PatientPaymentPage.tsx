@@ -107,10 +107,6 @@ export const PatientPaymentPage = () => {
     }
   };
 
-  const refreshUrls = async () => {
-    await loadPaymentUrls();
-  };
-
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -262,15 +258,8 @@ export const PatientPaymentPage = () => {
               </div>
             )}
 
-            <button
-              onClick={refreshUrls}
-              className="btn-secondary text-sm w-full"
-            >
-              Refresh Links (if expired)
-            </button>
-
-            <p className="text-xs text-gray-500 text-center">
-              Download links expire after 15 minutes. Click refresh to generate new links.
+            <p className="text-sm text-amber-600 text-center bg-amber-50 border border-amber-200 rounded-lg p-3">
+              ⓘ Download links expire after 15 minutes.
             </p>
           </div>
         </div>

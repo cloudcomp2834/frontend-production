@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { referenceService, scheduleService, appointmentService } from '../../services';
 import { ApiError } from '../../services/api';
@@ -7,6 +7,7 @@ import type { DoctorDirectoryDto, AppointmentTypeDto, DoctorScheduleDto, CreateA
 
 export const PatientBookingPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { patientId } = useAuth();
   const [doctors, setDoctors] = useState<DoctorDirectoryDto[]>([]);
   const [appointmentTypes, setAppointmentTypes] = useState<AppointmentTypeDto[]>([]);
@@ -26,17 +27,24 @@ export const PatientBookingPage = () => {
 
   const loadInitialData = useCallback(async () => {
     try {
+      // Get pre-selected doctor from navigation state
+      const selectedDoctorId = (location.state as any)?.selectedDoctorId;
+      
       const [doctorsData, typesData] = await Promise.all([
         referenceService.getDoctorDirectory(),
         referenceService.getAppointmentTypes(),
       ]);
       
       // Filter only active doctors
-      setDoctors(doctorsData.filter(d => d.status === 'Active'));
+      const activeDoctors = doctorsData.filter(d => d.status === 'Active');
+      setDoctors(activeDoctors);
       setAppointmentTypes(typesData);
 
-      if (doctorsData.length > 0) {
-        setFormData(prev => ({ ...prev, doctorId: doctorsData[0].doctorId }));
+      // Set initial doctor - use pre-selected or first available
+      const initialDoctorId = selectedDoctorId || (activeDoctors.length > 0 ? activeDoctors[0].doctorId : 0);
+      
+      if (initialDoctorId) {
+        setFormData(prev => ({ ...prev, doctorId: initialDoctorId }));
       }
       if (typesData.length > 0) {
         setFormData(prev => ({ ...prev, appointmentCategoryId: typesData[0].appointmentCategoryId }));
@@ -46,7 +54,7 @@ export const PatientBookingPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [location.state]);
 
   const loadSchedules = useCallback(async () => {
     if (!formData.doctorId || !formData.appointmentDate) {
