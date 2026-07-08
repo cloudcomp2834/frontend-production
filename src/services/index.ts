@@ -157,17 +157,17 @@ export const scheduleService = {
 // Appointments
 export const appointmentService = {
   getAll: async (): Promise<AppointmentDto[]> => {
-    const { data } = await apiFetch('/api/appointments');
+    const { data } = await apiFetch('/api/appointment');
     return data;
   },
 
   getById: async (id: number): Promise<AppointmentDto> => {
-    const { data } = await apiFetch(`/api/appointments/${id}`);
+    const { data } = await apiFetch(`/api/appointment/${id}`);
     return data;
   },
 
   getMine: async (): Promise<AppointmentDto[]> => {
-    const { data } = await apiFetch('/api/appointments/mine');
+    const { data } = await apiFetch('/api/appointment/mine');
     return data;
   },
 
@@ -182,7 +182,7 @@ export const appointmentService = {
   },
 
   create: async (appointment: CreateAppointmentRequest): Promise<AppointmentDto> => {
-    const { data } = await apiFetch('/api/appointments', {
+    const { data } = await apiFetch('/api/appointment', {
       method: 'POST',
       body: JSON.stringify(appointment),
     });
@@ -190,14 +190,14 @@ export const appointmentService = {
   },
 
   cancel: async (id: number): Promise<AppointmentDto> => {
-    const { data } = await apiFetch(`/api/appointments/${id}/cancel`, {
+    const { data } = await apiFetch(`/api/appointment/${id}/cancel`, {
       method: 'PATCH',
     });
     return data;
   },
 
   complete: async (id: number, request: CompleteAppointmentRequest): Promise<CompleteAppointmentResponse> => {
-    const { data } = await apiFetch(`/api/appointments/${id}/complete`, {
+    const { data } = await apiFetch(`/api/appointment/${id}/complete`, {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -205,7 +205,7 @@ export const appointmentService = {
   },
 
   markNoShow: async (id: number): Promise<AppointmentDto> => {
-    const { data } = await apiFetch(`/api/appointments/${id}/no-show`, {
+    const { data } = await apiFetch(`/api/appointment/${id}/no-show`, {
       method: 'PATCH',
     });
     return data;
@@ -276,11 +276,6 @@ export const userService = {
 export const medicalRecordService = {
   getById: async (medicalRecordId: number): Promise<MedicalRecordDto> => {
     const { data } = await apiFetch(`/api/medical-records/${medicalRecordId}`);
-    return data;
-  },
-
-  getByAppointmentId: async (appointmentId: number): Promise<MedicalRecordDto> => {
-    const { data } = await apiFetch(`/api/medical-records/appointment/${appointmentId}`);
     return data;
   },
 

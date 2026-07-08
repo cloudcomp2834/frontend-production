@@ -48,12 +48,10 @@ export interface DoctorDto {
   name: string;
   icPassport: string;
   specialistId: number;
-  specialismName?: string;
   contactNumber: string;
   status: 'Active' | 'Inactive';
   medicalLicense: string;
   hospitalId: number;
-  hospitalName?: string;
 }
 
 export interface DoctorDirectoryDto {

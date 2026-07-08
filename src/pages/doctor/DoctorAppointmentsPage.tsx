@@ -1,59 +1,19 @@
-import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { appointmentService, medicalRecordService } from '../../services';
 import { ApiError } from '../../services/api';
 import type { DoctorAppointmentDto } from '../../types';
-
-const finalStatuses = ['Completed', 'No-show', 'Expired', 'Cancelled'];
-const actionableStatuses = ['Scheduled', 'Paid Scheduled'];
-const validFileTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-const maxFileSize = 10 * 1024 * 1024;
-
-const formatTime = (time: string) => time.substring(0, 5);
-
-const getApiMessage = (err: ApiError) => {
-  if (typeof err.data === 'string') return err.data;
-  return err.data?.error || err.data?.title || 'An unexpected error occurred';
-};
-
-const getAppointmentStart = (appointment: DoctorAppointmentDto) => {
-  const time = appointment.startTime.length === 5 ? `${appointment.startTime}:00` : appointment.startTime;
-  return new Date(`${appointment.appointmentDate}T${time}`);
-};
-
-const hasAppointmentStarted = (appointment: DoctorAppointmentDto) => {
-  const start = getAppointmentStart(appointment);
-  return Number.isNaN(start.getTime()) ? true : Date.now() > start.getTime();
-};
-
-const getStatusBadgeClass = (status: string) => {
-  switch (status) {
-    case 'Scheduled':
-      return 'bg-blue-100 text-blue-800';
-    case 'Paid Scheduled':
-      return 'bg-green-100 text-green-800';
-    case 'Completed':
-      return 'bg-purple-100 text-purple-800';
-    case 'No-show':
-      return 'bg-orange-100 text-orange-800';
-    case 'Expired':
-      return 'bg-gray-100 text-gray-800';
-    case 'Cancelled':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
 
 export const DoctorAppointmentsPage = () => {
   const { doctorId } = useAuth();
   const [appointments, setAppointments] = useState<DoctorAppointmentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<DoctorAppointmentDto | null>(null);
+  
+  // Complete appointment modal state
+  const [showModal, setShowModal] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<'Completed' | 'No-show' | ''>('');
   const [diagnose, setDiagnose] = useState('');
   const [note, setNote] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -71,89 +31,101 @@ export const DoctorAppointmentsPage = () => {
 
     try {
       const data = await appointmentService.getDoctorAppointments(doctorId);
-      setAppointments(data.sort((a, b) =>
+      // Filter to show only paid appointments
+      const paidAppointments = data.filter(apt => apt.status === 'Paid Scheduled');
+      setAppointments(paidAppointments.sort((a, b) => 
         new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
       ));
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(getApiMessage(err) || 'Failed to load appointments');
+        setError(err.data?.error || 'Failed to load appointments');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenCompleteModal = (appointment: DoctorAppointmentDto) => {
-    setSelectedAppointment(appointment);
+  const handleOpenModal = (appointmentId: number) => {
+    setSelectedAppointmentId(appointmentId);
+    setSelectedStatus('');
     setDiagnose('');
     setNote('');
     setFiles([]);
-    setError('');
-    setSuccessMessage('');
-    setShowCompleteModal(true);
+    setShowModal(true);
   };
 
-  const handleCloseCompleteModal = () => {
-    setShowCompleteModal(false);
-    setSelectedAppointment(null);
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedAppointmentId(null);
+    setSelectedStatus('');
     setDiagnose('');
     setNote('');
     setFiles([]);
-    setUploadingFiles(false);
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []);
-
-    const invalidFiles = selectedFiles.filter(file => !validFileTypes.includes(file.type));
-    if (invalidFiles.length > 0) {
-      setError('Invalid file type. Only JPEG, PNG, WEBP, and PDF files are accepted.');
-      e.target.value = '';
-      return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      
+      // Validate file types
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+      const invalidFiles = selectedFiles.filter(f => !validTypes.includes(f.type));
+      
+      if (invalidFiles.length > 0) {
+        setError('Invalid file type. Only JPEG, PNG, WEBP, and PDF files are accepted.');
+        return;
+      }
+      
+      // Validate file sizes (10MB max)
+      const oversizedFiles = selectedFiles.filter(f => f.size > 10 * 1024 * 1024);
+      
+      if (oversizedFiles.length > 0) {
+        setError('File size exceeds the 10 MB limit.');
+        return;
+      }
+      
+      setFiles(selectedFiles);
+      setError('');
     }
-
-    const oversizedFiles = selectedFiles.filter(file => file.size > maxFileSize);
-    if (oversizedFiles.length > 0) {
-      setError('File size exceeds the 10 MB limit.');
-      e.target.value = '';
-      return;
-    }
-
-    setFiles(selectedFiles);
-    setError('');
   };
 
-  const handleCompleteSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
-    if (!selectedAppointment) return;
-
-    if (!hasAppointmentStarted(selectedAppointment)) {
-      setError('This appointment cannot be completed before its scheduled start time.');
-      return;
-    }
-
+    
+    if (!selectedAppointmentId || !selectedStatus) return;
+    
     setSubmitting(true);
     setError('');
-    setSuccessMessage('');
-
+    
     try {
-      const response = await appointmentService.complete(selectedAppointment.appointmentId, {
-        diagnose: diagnose.trim(),
-        note: note.trim(),
-      });
-
-      if (files.length > 0) {
-        setUploadingFiles(true);
-        await medicalRecordService.uploadFiles(response.medicalRecord.medicalRecordId, files);
+      if (selectedStatus === 'Completed') {
+        // Step 1: Complete appointment and create medical record
+        const response = await appointmentService.complete(selectedAppointmentId, {
+          diagnose: diagnose.trim(),
+          note: note.trim(),
+        });
+        
+        // Step 2: Upload files if any
+        if (files.length > 0) {
+          setUploadingFiles(true);
+          await medicalRecordService.uploadFiles(response.medicalRecord.medicalRecordId, files);
+        }
+        
+        alert('Appointment completed successfully!');
+      } else if (selectedStatus === 'No-show') {
+        // Mark as no-show
+        await appointmentService.markNoShow(selectedAppointmentId);
+        alert('Appointment marked as no-show.');
       }
-
-      setSuccessMessage('Appointment completed and medical record created.');
+      
+      // Reload appointments to reflect the change
       await loadAppointments();
-      handleCloseCompleteModal();
+      
+      // Close modal
+      handleCloseModal();
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(getApiMessage(err) || 'Failed to complete appointment');
+        setError(err.data?.error || 'Failed to process appointment');
       }
     } finally {
       setSubmitting(false);
@@ -161,24 +133,13 @@ export const DoctorAppointmentsPage = () => {
     }
   };
 
-  const handleNoShow = async (appointment: DoctorAppointmentDto) => {
-    if (!confirm('Mark this appointment as no-show? This final status cannot be changed afterward.')) return;
-
-    setError('');
-    setSuccessMessage('');
-
-    try {
-      await appointmentService.markNoShow(appointment.appointmentId);
-      setSuccessMessage(`Appointment #${appointment.appointmentId} marked as no-show.`);
-      await loadAppointments();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(getApiMessage(err) || 'Failed to mark appointment as no-show');
-      }
+  const isSubmitDisabled = () => {
+    if (!selectedStatus) return true;
+    if (selectedStatus === 'Completed') {
+      return !diagnose.trim() || !note.trim();
     }
+    return false; // No-show can be submitted without additional fields
   };
-
-  const canActOn = (appointment: DoctorAppointmentDto) => actionableStatuses.includes(appointment.status);
 
   if (loading) {
     return (
@@ -192,7 +153,7 @@ export const DoctorAppointmentsPage = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">My Appointments</h1>
-        <p className="text-gray-600 mt-2">Complete appointments, create medical records, and mark no-shows.</p>
+        <p className="text-gray-600 mt-2">View your paid scheduled patient appointments</p>
       </div>
 
       {error && (
@@ -201,200 +162,204 @@ export const DoctorAppointmentsPage = () => {
         </div>
       )}
 
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-          {successMessage}
-        </div>
-      )}
-
       <div className="card">
         {appointments.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            No appointments found.
+            No appointments found
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Concern</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Patient
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Date & Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Concern
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {appointments.map((appointment) => {
-                  const started = hasAppointmentStarted(appointment);
-                  const finalStatus = finalStatuses.includes(appointment.status);
-
-                  return (
-                    <tr key={appointment.appointmentId} className="hover:bg-gray-50 appointment-card-enter">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        #{appointment.appointmentId}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {appointment.patientName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>{appointment.appointmentDate}</div>
-                        <div className="text-gray-500">
-                          {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {appointment.appointmentType}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
-                        <div className="line-clamp-2">{appointment.medicalConcern || '-'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(appointment.status)}`}>
-                          {appointment.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {finalStatus ? (
-                          <span className="text-sm text-gray-500">Final</span>
-                        ) : canActOn(appointment) ? (
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={() => handleOpenCompleteModal(appointment)}
-                              className="btn-primary text-sm"
-                              disabled={!started}
-                              title={started ? 'Complete appointment' : 'Available after the appointment start time'}
-                            >
-                              Complete
-                            </button>
-                            <button
-                              onClick={() => handleNoShow(appointment)}
-                              className="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm"
-                            >
-                              No-show
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500">No action</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {appointments.map((appointment) => (
+                  <tr key={appointment.appointmentId} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      #{appointment.appointmentId}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {appointment.patientName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div>{appointment.appointmentDate}</div>
+                      <div className="text-gray-500">
+                        {appointment.startTime.substring(0, 5)} - {appointment.endTime.substring(0, 5)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {appointment.appointmentType}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                      {appointment.medicalConcern || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        onClick={() => handleOpenModal(appointment.appointmentId)}
+                        className="inline-flex items-center justify-center p-2 text-pantai-600 hover:text-pantai-800 hover:bg-pantai-50 rounded-lg transition-colors"
+                        title="Complete appointment"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         )}
       </div>
 
-      {showCompleteModal && selectedAppointment && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-          <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-enter">
-            <div className="sticky top-0 bg-white border-b border-gray-100 p-6 z-10">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <p className="text-sm font-medium text-pantai-700">Complete Appointment</p>
-                  <h3 className="text-xl font-bold text-gray-900">
-                    Appointment #{selectedAppointment.appointmentId}
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {selectedAppointment.patientName} · {selectedAppointment.appointmentDate} · {formatTime(selectedAppointment.startTime)}
-                  </p>
-                </div>
-                <button
-                  onClick={handleCloseCompleteModal}
-                  className="h-9 w-9 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 text-2xl leading-none"
-                  aria-label="Close complete appointment form"
-                  disabled={submitting}
-                >
-                  x
-                </button>
-              </div>
-            </div>
+      {/* Process Appointment Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Process Appointment
+              </h3>
 
-            <form onSubmit={handleCompleteSubmit} className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="diagnose" className="block text-sm font-medium text-gray-700 mb-1">
-                    Diagnosis <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="diagnose"
-                    value={diagnose}
-                    onChange={(e) => setDiagnose(e.target.value)}
-                    className="input-field w-full"
-                    rows={3}
-                    required
-                    placeholder="Enter patient diagnosis"
-                  />
-                </div>
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                  {/* Status Dropdown */}
+                  <div>
+                    <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                      Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="status"
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value as 'Completed' | 'No-show' | '')}
+                      className="input-field w-full"
+                      required
+                    >
+                      <option value="">-- Select Status --</option>
+                      <option value="Completed">Completed</option>
+                      <option value="No-show">No-show</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
-                    Notes <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="note"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    className="input-field w-full"
-                    rows={5}
-                    required
-                    placeholder="Treatment plan, recommendations, and follow-up instructions"
-                  />
-                </div>
+                  {/* Conditional Fields - Only show for "Completed" status */}
+                  {selectedStatus === 'Completed' && (
+                    <>
+                      {/* Diagnose Field */}
+                      <div>
+                        <label htmlFor="diagnose" className="block text-sm font-medium text-gray-700 mb-1">
+                          Diagnose <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="diagnose"
+                          value={diagnose}
+                          onChange={(e) => setDiagnose(e.target.value)}
+                          className="input-field w-full"
+                          placeholder="e.g., Upper respiratory tract infection"
+                        />
+                      </div>
 
-                <div>
-                  <label htmlFor="files" className="block text-sm font-medium text-gray-700 mb-1">
-                    Supporting Files
-                  </label>
-                  <input
-                    type="file"
-                    id="files"
-                    onChange={handleFileChange}
-                    className="input-field w-full"
-                    multiple
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    JPEG, PNG, WEBP, or PDF. Max 10 MB per file.
-                  </p>
+                      {/* Note Field */}
+                      <div>
+                        <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
+                          Note <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          id="note"
+                          value={note}
+                          onChange={(e) => setNote(e.target.value)}
+                          className="input-field w-full"
+                          rows={4}
+                          placeholder="Rest, hydration, follow-up in 1 week if symptoms persist..."
+                        />
+                      </div>
 
-                  {files.length > 0 && (
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {files.map((file) => (
-                        <div key={`${file.name}-${file.size}`} className="rounded-lg border border-gray-200 p-3 text-sm">
-                          <p className="font-medium text-gray-900 truncate">{file.name}</p>
-                          <p className="text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                        </div>
-                      ))}
+                      {/* File Upload */}
+                      <div>
+                        <label htmlFor="files" className="block text-sm font-medium text-gray-700 mb-1">
+                          Supporting Files (Optional)
+                        </label>
+                        <input
+                          type="file"
+                          id="files"
+                          onChange={handleFileChange}
+                          className="input-field w-full"
+                          multiple
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Accepted formats: JPEG, PNG, WEBP, PDF. Max size: 10MB per file.
+                        </p>
+                        {files.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-700">Selected files:</p>
+                            <ul className="text-xs text-gray-600 list-disc list-inside">
+                              {files.map((file, idx) => (
+                                <li key={idx}>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Info message for No-show */}
+                  {selectedStatus === 'No-show' && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <p className="text-sm text-orange-800">
+                        ⚠️ Marking this appointment as "No-show" will finalize the status. This action cannot be undone.
+                      </p>
                     </div>
                   )}
                 </div>
-              </div>
 
-              <div className="mt-6 flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={handleCloseCompleteModal}
-                  className="btn-secondary"
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={submitting || uploadingFiles || !diagnose.trim() || !note.trim()}
-                >
-                  {submitting
-                    ? (uploadingFiles ? 'Uploading files...' : 'Completing...')
-                    : 'Complete Appointment'}
-                </button>
-              </div>
-            </form>
+                {/* Buttons */}
+                <div className="mt-6 flex gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="btn-secondary"
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={submitting || uploadingFiles || isSubmitDisabled()}
+                  >
+                    {submitting 
+                      ? (uploadingFiles ? 'Uploading files...' : 'Processing...') 
+                      : selectedStatus === 'Completed' 
+                        ? 'Complete Appointment' 
+                        : selectedStatus === 'No-show' 
+                          ? 'Mark as No-Show' 
+                          : 'Submit'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
