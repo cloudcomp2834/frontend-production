@@ -1,19 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { appointmentService, medicalRecordService } from '../../services';
-import { ApiError } from '../../services/api';
+import { apiFetch, ApiError } from '../../services/api';
 import type { AppointmentDto, MedicalRecordDto } from '../../types';
+
+type MedicalRecordStatus = 'idle' | 'loading' | 'success' | 'not_created' | 'error';
 
 export const PatientAppointmentsPage = () => {
   const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Medical record modal state
   const [showMedicalRecordModal, setShowMedicalRecordModal] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentDto | null>(null);
   const [medicalRecord, setMedicalRecord] = useState<MedicalRecordDto | null>(null);
-  const [loadingMedicalRecord, setLoadingMedicalRecord] = useState(false);
+  const [medicalRecordStatus, setMedicalRecordStatus] = useState<MedicalRecordStatus>('idle');
+  const [medicalRecordError, setMedicalRecordError] = useState('');
 
   useEffect(() => {
     loadAppointments();
@@ -49,36 +53,37 @@ export const PatientAppointmentsPage = () => {
 
   const handleViewMedicalRecord = async (appointment: AppointmentDto) => {
     setSelectedAppointment(appointment);
+    setMedicalRecord(null);
+    setMedicalRecordError('');
+    setMedicalRecordStatus('loading');
     setShowMedicalRecordModal(true);
-    setLoadingMedicalRecord(true);
-    setError('');
-    
+    requestAnimationFrame(() => setModalVisible(true));
+
     try {
-      // For now, we need to find the medical record ID
-      // Since backend doesn't have endpoint to get by appointmentId,
-      // we'll fetch by the appointment's medical record (if we stored it)
-      // For this demo, we'll show a message that medical records can be accessed
-      // In a real scenario, you'd need backend to add GET /api/medical-records/by-appointment/{appointmentId}
-      
-      // Placeholder: In production, you would call:
-      // const record = await medicalRecordService.getByAppointmentId(appointment.appointmentId);
-      // setMedicalRecord(record);
-      
-      // For now, show a message
-      setMedicalRecord(null);
+      const { data } = await apiFetch(`/api/medical-records/appointment/${appointment.appointmentId}`);
+      setMedicalRecord(data);
+      setMedicalRecordStatus('success');
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.data?.error || 'Failed to load medical record');
+      if (err instanceof ApiError && err.status === 404 && String(err.data?.error || '').includes('not found for this appointment')) {
+        setMedicalRecordStatus('not_created');
+      } else if (err instanceof ApiError) {
+        setMedicalRecordError(err.data?.error || 'Failed to load medical record');
+        setMedicalRecordStatus('error');
+      } else {
+        setMedicalRecordError('Failed to load medical record');
+        setMedicalRecordStatus('error');
       }
-    } finally {
-      setLoadingMedicalRecord(false);
     }
   };
 
   const handleCloseMedicalRecordModal = () => {
-    setShowMedicalRecordModal(false);
-    setSelectedAppointment(null);
-    setMedicalRecord(null);
+    setModalVisible(false);
+    setTimeout(() => {
+      setShowMedicalRecordModal(false);
+      setSelectedAppointment(null);
+      setMedicalRecord(null);
+      setMedicalRecordStatus('idle');
+    }, 200);
   };
 
   const handleDownloadFile = async (recordFileId: number) => {
@@ -121,6 +126,12 @@ export const PatientAppointmentsPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <style>{`
+        @keyframes mrFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes mrFadeInUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .mr-fade-in { animation: mrFadeIn 200ms ease-out both; }
+        .mr-fade-in-up { animation: mrFadeInUp 250ms ease-out both; }
+      `}</style>
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">My Appointments</h1>
@@ -228,8 +239,18 @@ export const PatientAppointmentsPage = () => {
 
       {/* Medical Record Modal */}
       {showMedicalRecordModal && selectedAppointment && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-          <div className="relative bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4">
+        <div
+          className={`fixed inset-0 bg-gray-600 overflow-y-auto h-full w-full z-50 flex items-center justify-center transition-opacity duration-200 ease-out ${
+            modalVisible ? 'bg-opacity-50' : 'bg-opacity-0'
+          }`}
+          onClick={handleCloseMedicalRecordModal}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`relative bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 transition-all duration-200 ease-out ${
+              modalVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
+            }`}
+          >
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-bold text-gray-900">
@@ -237,20 +258,27 @@ export const PatientAppointmentsPage = () => {
                 </h3>
                 <button
                   onClick={handleCloseMedicalRecordModal}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none transition-colors duration-150"
                 >
                   ×
                 </button>
               </div>
 
-              {loadingMedicalRecord ? (
-                <div className="text-center py-12">Loading medical record...</div>
-              ) : error ? (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                  {error}
+              {medicalRecordStatus === 'loading' && (
+                <div className="text-center py-12 animate-pulse">
+                  <div className="mx-auto h-8 w-8 rounded-full border-4 border-blue-100 border-t-primary animate-spin mb-3" />
+                  <p className="text-gray-500">Loading medical record...</p>
                 </div>
-              ) : medicalRecord ? (
-                <div className="space-y-4">
+              )}
+
+              {medicalRecordStatus === 'error' && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mr-fade-in">
+                  {medicalRecordError}
+                </div>
+              )}
+
+              {medicalRecordStatus === 'success' && medicalRecord && (
+                <div className="space-y-4 mr-fade-in">
                   {/* Medical Record Details */}
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -290,10 +318,11 @@ export const PatientAppointmentsPage = () => {
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-2">Supporting Documents:</h4>
                       <div className="space-y-2">
-                        {medicalRecord.files.map((file) => (
+                        {medicalRecord.files.map((file, index) => (
                           <div
                             key={file.recordFileId}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                            style={{ animationDelay: `${index * 60}ms` }}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mr-fade-in-up hover:bg-gray-100 transition-colors duration-150"
                           >
                             <div>
                               <p className="font-medium text-gray-900">{file.fileName}</p>
@@ -314,15 +343,16 @@ export const PatientAppointmentsPage = () => {
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="text-center py-12">
+              )}
+
+              {medicalRecordStatus === 'not_created' && (
+                <div className="text-center py-12 mr-fade-in">
                   <div className="text-gray-400 text-5xl mb-4">📋</div>
                   <p className="text-gray-600">
                     Medical record is not yet available for this appointment.
                   </p>
                   <p className="text-sm text-gray-500 mt-2">
-                    Note: Currently, the backend does not support fetching medical records by appointment ID.
-                    The doctor may not have completed the medical record yet, or you may need to contact support.
+                    The doctor has not completed the medical record for this appointment yet.
                   </p>
                 </div>
               )}
