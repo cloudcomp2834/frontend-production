@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { scheduleService } from '../../services';
 import { ApiError } from '../../services/api';
 import type { DoctorScheduleDto, CreateDoctorScheduleRequest } from '../../types';
 
 export const DoctorSchedulePage = () => {
-  const { doctorId } = useAuth();
+  const { doctorId: authDoctorId } = useAuth();
+  const { doctorId: urlDoctorId } = useParams<{ doctorId: string }>();
+  // Use URL param if available (admin viewing), otherwise use auth doctorId (doctor viewing own)
+  const doctorId = urlDoctorId ? parseInt(urlDoctorId) : authDoctorId;
   const [schedules, setSchedules] = useState<DoctorScheduleDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -45,7 +49,13 @@ export const DoctorSchedulePage = () => {
 
     setError('');
     try {
-      await scheduleService.createSchedule(doctorId, formData);
+      // Append :00 seconds to match backend TimeOnly format (HH:mm:ss)
+      const scheduleData: CreateDoctorScheduleRequest = {
+        date: formData.date,
+        startTime: formData.startTime + ':00',
+        endTime: formData.endTime + ':00',
+      };
+      await scheduleService.createSchedule(doctorId, scheduleData);
       setFormData({ date: '', startTime: '', endTime: '' });
       setShowAddForm(false);
       await loadSchedules();
