@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { scheduleService, doctorService } from '../../services';
 import { ApiError } from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
 import type { DoctorScheduleDto, CreateDoctorScheduleRequest, DoctorDto } from '../../types';
 
 export const AdminDoctorSchedulePage = () => {
   const { doctorId } = useParams<{ doctorId: string }>();
-  const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [doctor, setDoctor] = useState<DoctorDto | null>(null);
   const [schedules, setSchedules] = useState<DoctorScheduleDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,14 +74,18 @@ export const AdminDoctorSchedulePage = () => {
 
   const handleDelete = async (scheduleId: number) => {
     if (!doctorId) return;
-    if (!confirm('Are you sure you want to delete this schedule slot?')) return;
+    if (!(await confirm({
+      title: 'Delete Schedule Slot',
+      message: 'Are you sure you want to delete this schedule slot?',
+      danger: true,
+    }))) return;
 
     try {
       await scheduleService.deleteSchedule(parseInt(doctorId), scheduleId);
       await loadDoctorAndSchedules();
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(err.data?.error || 'Failed to delete schedule');
+        toast.error(err.data?.error || 'Failed to delete schedule');
       }
     }
   };
@@ -93,14 +100,8 @@ export const AdminDoctorSchedulePage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header with Back Button */}
+      {/* Header */}
       <div className="mb-6">
-        <button
-          onClick={() => navigate('/admin/doctors')}
-          className="text-primary hover:text-primary-dark mb-4 flex items-center"
-        >
-          ← Back to Doctors
-        </button>
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">

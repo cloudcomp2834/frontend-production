@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { appointmentService, medicalRecordService } from '../../services';
 import { apiFetch, ApiError } from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
 import type { AppointmentDto, MedicalRecordDto } from '../../types';
 
 type MedicalRecordStatus = 'idle' | 'loading' | 'success' | 'not_created' | 'error';
 
 export const PatientAppointmentsPage = () => {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,14 +43,18 @@ export const PatientAppointmentsPage = () => {
   };
 
   const handleCancel = async (appointmentId: number) => {
-    if (!confirm('Are you sure you want to cancel this appointment?')) return;
+    if (!(await confirm({
+      title: 'Cancel Appointment',
+      message: 'Are you sure you want to cancel this appointment?',
+      danger: true,
+    }))) return;
 
     try {
       await appointmentService.cancel(appointmentId);
       await loadAppointments();
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(err.data?.error || 'Failed to cancel appointment');
+        toast.error(err.data?.error || 'Failed to cancel appointment');
       }
     }
   };
@@ -92,7 +100,7 @@ export const PatientAppointmentsPage = () => {
       window.open(fileUrl, '_blank');
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(err.data?.error || 'Failed to get download URL');
+        toast.error(err.data?.error || 'Failed to get download URL');
       }
     }
   };

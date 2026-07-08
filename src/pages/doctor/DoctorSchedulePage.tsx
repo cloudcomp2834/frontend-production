@@ -2,10 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { scheduleService } from '../../services';
 import { ApiError } from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
 import type { DoctorScheduleDto, CreateDoctorScheduleRequest } from '../../types';
 
 export const DoctorSchedulePage = () => {
   const { doctorId } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [schedules, setSchedules] = useState<DoctorScheduleDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -62,14 +66,18 @@ export const DoctorSchedulePage = () => {
 
   const handleDelete = async (scheduleId: number) => {
     if (!doctorId) return;
-    if (!confirm('Are you sure you want to delete this schedule slot?')) return;
+    if (!(await confirm({
+      title: 'Delete Schedule Slot',
+      message: 'Are you sure you want to delete this schedule slot?',
+      danger: true,
+    }))) return;
 
     try {
       await scheduleService.deleteSchedule(doctorId, scheduleId);
       await loadSchedules();
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(err.data?.error || 'Failed to delete schedule');
+        toast.error(err.data?.error || 'Failed to delete schedule');
       }
     }
   };

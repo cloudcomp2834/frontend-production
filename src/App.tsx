@@ -2,10 +2,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ToastProvider } from './components/ui/ToastProvider';
+import { ConfirmProvider } from './components/ui/ConfirmProvider';
 
 // Auth pages
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 // Admin pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -47,8 +50,10 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Layout>
-          <Routes>
+        <ToastProvider>
+          <ConfirmProvider>
+            <Layout>
+              <Routes>
             {/* Public routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
@@ -181,9 +186,11 @@ function App() {
             />
 
             {/* 404 fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
+            <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Layout>
+          </ConfirmProvider>
+        </ToastProvider>
       </BrowserRouter>
     </AuthProvider>
   );

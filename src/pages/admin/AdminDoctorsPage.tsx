@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { doctorService, referenceService } from '../../services';
 import { ApiError } from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
 import type { DoctorDto, HospitalDto, SpecialismDto } from '../../types';
 
 export const AdminDoctorsPage = () => {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [doctors, setDoctors] = useState<DoctorDto[]>([]);
   const [hospitals, setHospitals] = useState<HospitalDto[]>([]);
   const [specialisms, setSpecialisms] = useState<SpecialismDto[]>([]);
@@ -41,13 +45,17 @@ export const AdminDoctorsPage = () => {
       await loadData();
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(err.data?.error || 'Failed to update doctor status');
+        toast.error(err.data?.error || 'Failed to update doctor status');
       }
     }
   };
 
   const handleDelete = async (doctorId: number, doctorName: string) => {
-    if (!confirm(`Are you sure you want to delete ${doctorName}? This action cannot be undone.`)) {
+    if (!(await confirm({
+      title: 'Delete Doctor',
+      message: `Are you sure you want to delete ${doctorName}? This action cannot be undone.`,
+      danger: true,
+    }))) {
       return;
     }
     try {
@@ -55,7 +63,7 @@ export const AdminDoctorsPage = () => {
       await loadData();
     } catch (err) {
       if (err instanceof ApiError) {
-        alert(err.data?.error || 'Failed to delete doctor');
+        toast.error(err.data?.error || 'Failed to delete doctor');
       }
     }
   };

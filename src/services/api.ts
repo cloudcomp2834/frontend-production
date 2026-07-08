@@ -1,3 +1,5 @@
+import { emitToast } from '../components/ui/toastBus';
+
 const BASE_URL = 'http://localhost:5024';
 
 export class ApiError extends Error {
@@ -35,7 +37,10 @@ export const apiFetch = async (path: string, options: RequestInit = {}) => {
   // Handle 401 - session expired
   if (res.status === 401) {
     localStorage.clear();
-    window.location.href = '/login';
+    emitToast('error', 'Your session has expired. Please log in again.');
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 1200);
     throw new ApiError(401, { error: 'Session expired' });
   }
 

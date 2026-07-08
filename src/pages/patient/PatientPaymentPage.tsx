@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { appointmentService, paymentService } from '../../services';
 import { ApiError } from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
 import type { AppointmentDto } from '../../types';
 
 export const PatientPaymentPage = () => {
   const { appointmentId } = useParams<{ appointmentId: string }>();
-  const navigate = useNavigate();
+  const toast = useToast();
   const [appointment, setAppointment] = useState<AppointmentDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -97,7 +98,7 @@ export const PatientPaymentPage = () => {
       await loadAppointment();
       
       // Show success message
-      alert('Payment receipt uploaded successfully! Your appointment is now confirmed.');
+      toast.success('Payment receipt uploaded successfully! Your appointment is now confirmed.');
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.data?.error || 'Failed to upload receipt');
@@ -276,16 +277,6 @@ export const PatientPaymentPage = () => {
           </div>
         </div>
       )}
-
-      {/* Back Button */}
-      <div className="mt-6">
-        <button
-          onClick={() => navigate('/patient/appointments')}
-          className="btn-secondary"
-        >
-          ← Back to My Appointments
-        </button>
-      </div>
     </div>
   );
 };

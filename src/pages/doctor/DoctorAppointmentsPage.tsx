@@ -2,10 +2,12 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { appointmentService, medicalRecordService } from '../../services';
 import { ApiError } from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
 import type { DoctorAppointmentDto } from '../../types';
 
 export const DoctorAppointmentsPage = () => {
   const { doctorId } = useAuth();
+  const toast = useToast();
   const [appointments, setAppointments] = useState<DoctorAppointmentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -111,11 +113,11 @@ export const DoctorAppointmentsPage = () => {
           await medicalRecordService.uploadFiles(response.medicalRecord.medicalRecordId, files);
         }
         
-        alert('Appointment completed successfully!');
+        toast.success('Appointment completed successfully!');
       } else if (selectedStatus === 'No-show') {
         // Mark as no-show
         await appointmentService.markNoShow(selectedAppointmentId);
-        alert('Appointment marked as no-show.');
+        toast.success('Appointment marked as no-show.');
       }
       
       // Reload appointments to reflect the change
