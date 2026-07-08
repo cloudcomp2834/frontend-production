@@ -1,6 +1,6 @@
 import { triggerForceLogout, SESSION_EXPIRED_MESSAGE } from '../contexts/authBus';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5024';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://13.239.141.189';
 
 export class ApiError extends Error {
   status: number;
