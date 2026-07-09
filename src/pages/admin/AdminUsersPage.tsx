@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { userService } from '../../services';
 import { getErrorMessage } from '../../services/api';
 import type { UserDto } from '../../types';
@@ -47,9 +48,14 @@ export const AdminUsersPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-        <p className="text-gray-600 mt-2">View all system user accounts</p>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-2">View all system user accounts</p>
+        </div>
+        <Link to="/admin/users/new" className="btn-primary">
+          + Add User
+        </Link>
       </div>
 
       {error && (

@@ -182,11 +182,21 @@ export interface UserDto {
   role: string;
 }
 
-export interface CreateUserRequest {
+export interface CreateAdminUserRequest {
   icPassport: string;
   username: string;
   password: string;
+  name: string;
+  dob?: string; // YYYY-MM-DD
+}
+
+export interface AdminUserDto {
+  adminId: number;
+  icPassport: string;
+  username: string;
   role: string;
+  name: string;
+  dob?: string;
 }
 
 // Error Response
