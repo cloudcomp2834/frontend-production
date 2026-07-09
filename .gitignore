@@ -25,4 +25,6 @@ dist-ssr
 *.sw?
 FRONTEND_SPEC.md
 *.md
+
 backend-production/
+bckd/
