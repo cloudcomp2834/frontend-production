@@ -4,6 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../services/api';
 import { DASHBOARD_PATHS } from '../utils/dashboardPaths';
 
+const TEST_ACCOUNTS = [
+  { role: 'Admin', username: 'admin1', password: 'Password123!' },
+  { role: 'Doctor', username: 'doctor1', password: 'Password123!' },
+  { role: 'Patient', username: 'patient1', password: 'Password123!' },
+];
+
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -11,6 +17,12 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const fillTestAccount = (account: { username: string; password: string }) => {
+    setUsername(account.username);
+    setPassword(account.password);
+    setError('');
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -102,11 +114,20 @@ export const LoginPage = () => {
 
           {/* Test Accounts Info */}
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center mb-2">Test Accounts:</p>
+            <p className="text-xs text-gray-500 text-center mb-2">
+              Test Accounts (click to autofill):
+            </p>
             <div className="text-xs text-gray-600 space-y-1">
-              <p><strong>Admin:</strong> admin1 / Password123!</p>
-              <p><strong>Doctor:</strong> doctor1 / Password123!</p>
-              <p><strong>Patient:</strong> patient1 / Password123!</p>
+              {TEST_ACCOUNTS.map((account) => (
+                <button
+                  key={account.role}
+                  type="button"
+                  onClick={() => fillTestAccount(account)}
+                  className="block w-full text-left px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                >
+                  <strong>{account.role}:</strong> {account.username} / {account.password}
+                </button>
+              ))}
             </div>
           </div>
         </div>
