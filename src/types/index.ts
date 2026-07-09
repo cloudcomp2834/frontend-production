@@ -110,7 +110,9 @@ export interface AppointmentDto {
   appointmentId: number;
   appointmentCategoryId: number;
   doctorId: number;
+  doctorName: string;
   patientId: number;
+  patientName: string;
   appointmentDate: string;
   status: 'Scheduled' | 'Paid Scheduled' | 'Cancelled' | 'Completed' | 'No-show' | 'Expired';
   medicalConcern: string;
