@@ -86,6 +86,13 @@ export interface DoctorScheduleDto {
   endTime: string; // HH:mm:ss
 }
 
+export interface DoctorAvailabilityDto {
+  doctorId: number;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm:ss
+  endTime: string; // HH:mm:ss
+}
+
 export interface CreateDoctorScheduleRequest {
   date: string;
   startTime: string;

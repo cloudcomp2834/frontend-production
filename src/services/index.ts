@@ -8,6 +8,7 @@ import type {
   DoctorDirectoryDto,
   CreateDoctorWithUserRequest,
   DoctorScheduleDto,
+  DoctorAvailabilityDto,
   CreateDoctorScheduleRequest,
   UpdateDoctorScheduleRequest,
   DoctorAppointmentDto,
@@ -125,6 +126,16 @@ export const scheduleService = {
   ): Promise<DoctorScheduleDto[]> => {
     const query = buildQueryString({ from, to });
     const { data } = await apiFetch(`/api/doctors/${doctorId}/schedules${query}`);
+    return data;
+  },
+
+  getAvailability: async (
+    doctorId: number,
+    from?: string,
+    to?: string
+  ): Promise<DoctorAvailabilityDto[]> => {
+    const query = buildQueryString({ from, to });
+    const { data } = await apiFetch(`/api/doctors/${doctorId}/availability${query}`);
     return data;
   },
 
