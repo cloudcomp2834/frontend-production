@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { appointmentService } from '../../services';
 import { getErrorMessage } from '../../services/api';
+import { StatusBadge } from '../../components/ui/StatusBadge';
 import type { AppointmentDto } from '../../types';
 
 type DateSortDirection = 'asc' | 'desc';
@@ -33,19 +34,6 @@ export const AdminAppointmentsPage = () => {
       setLoading(false);
     }
   };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'Paid Scheduled':
-        return 'bg-green-100 text-green-800';
-      case 'Cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-      }
-    };
 
   const filteredAppointments = appointments
     .filter((appointment) => {
@@ -159,9 +147,7 @@ export const AdminAppointmentsPage = () => {
                       {appointment.patientName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
-                        {appointment.status}
-                      </span>
+                      <StatusBadge status={appointment.status} />
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
                       {appointment.medicalConcern || '-'}

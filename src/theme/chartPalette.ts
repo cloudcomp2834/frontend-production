@@ -1,7 +1,7 @@
 // Chart-specific tokens, validated via the dataviz skill's palette validator
 // (node scripts/validate_palette.js) against a white chart surface.
 // The app has no dark-mode support today, so only light-surface values are wired up.
-import { pantai } from './colors.js';
+import { pantai } from './colorTokens.js';
 
 // Single-series trend bar/line fill (brand blue, passes lightness/chroma/contrast checks).
 export const trendSeriesColor = pantai[600];

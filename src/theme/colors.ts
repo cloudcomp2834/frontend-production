@@ -7,7 +7,7 @@ import {
   statusColorDefault,
   roleColors,
   roleColorDefault,
-} from './colors.js';
+} from './colorTokens.js';
 
 export { pantai, primary, secondary, statusColors, statusColorDefault, roleColors, roleColorDefault };
 

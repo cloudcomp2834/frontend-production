@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { userService } from '../../services';
 import { getErrorMessage } from '../../services/api';
+import { RoleBadge } from '../../components/ui/RoleBadge';
 import type { UserDto } from '../../types';
 
 export const AdminUsersPage = () => {
@@ -22,19 +23,6 @@ export const AdminUsersPage = () => {
       if (message) setError(message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'Admin':
-        return 'bg-purple-100 text-purple-800';
-      case 'Doctor':
-        return 'bg-blue-100 text-blue-800';
-      case 'Patient':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -90,9 +78,7 @@ export const AdminUsersPage = () => {
                     {user.username}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
-                      {user.role}
-                    </span>
+                    <RoleBadge role={user.role} />
                   </td>
                 </tr>
               ))}

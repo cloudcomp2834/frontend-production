@@ -1,4 +1,4 @@
-import { pantai, primary, secondary } from './src/theme/colors.js';
+import { pantai, primary, secondary } from './src/theme/colorTokens.js';
 
 /** @type {import('tailwindcss').Config} */
 export default {
