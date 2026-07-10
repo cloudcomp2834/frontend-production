@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { PublicOnlyRoute } from './components/PublicOnlyRoute';
 import { ToastProvider } from './components/ui/ToastProvider';
 import { ConfirmProvider } from './components/ui/ConfirmProvider';
+import { SidebarProvider } from './components/ui/SidebarProvider';
 import { DASHBOARD_PATHS } from './utils/dashboardPaths';
 
 // Auth pages
@@ -50,6 +51,7 @@ function App() {
       <BrowserRouter>
         <ToastProvider>
           <ConfirmProvider>
+            <SidebarProvider>
             <Layout>
               <Routes>
             {/* Public routes */}
@@ -209,6 +211,7 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>
+            </SidebarProvider>
           </ConfirmProvider>
         </ToastProvider>
       </BrowserRouter>

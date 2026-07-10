@@ -1,7 +1,10 @@
 import { type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { DASHBOARD_PATHS } from '../utils/dashboardPaths';
+import { Sidebar } from './Sidebar';
+import { useSidebar } from './ui/SidebarProvider';
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,6 +14,7 @@ const NO_BACK_ARROW_PATHS = ['/', '/login', '/register', '/admin', '/doctor', '/
 
 export const Layout = ({ children }: LayoutProps) => {
   const { isAuthenticated, role, username, logout } = useAuth();
+  const { toggle } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -31,12 +35,24 @@ export const Layout = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className={`min-h-screen bg-gray-50 flex flex-col ${isAuthenticated ? 'lg:pl-60' : ''}`}>
+      <Sidebar />
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
+              {isAuthenticated && (
+                <button
+                  onClick={toggle}
+                  aria-label="Open menu"
+                  className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors duration-150 mr-2 text-gray-600 lg:hidden"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
+
               {showBackArrow && (
                 <button
                   onClick={handleBack}
