@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../../services';
 import { getErrorMessage } from '../../services/api';
+import { DatePicker } from '../../components/ui/DatePicker';
 
 type NewUserRole = 'Admin' | 'Patient';
 
@@ -23,6 +24,12 @@ export const AdminAddUserPage = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (role === 'Patient' && !dateOfBirth) {
+      setError('Please select a date of birth');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -151,16 +158,11 @@ export const AdminAddUserPage = () => {
 
           {role === 'Admin' && (
             <div>
-              <label htmlFor="dob" className="label">
-                Date of Birth
-              </label>
-              <input
+              <DatePicker
                 id="dob"
-                name="dob"
-                type="date"
+                label="Date of Birth"
                 value={dob}
-                onChange={(e) => setDob(e.target.value)}
-                className="input-field"
+                onChange={setDob}
               />
             </div>
           )}
@@ -168,17 +170,11 @@ export const AdminAddUserPage = () => {
           {role === 'Patient' && (
             <>
               <div>
-                <label htmlFor="dateOfBirth" className="label">
-                  Date of Birth <span className="text-red-500">*</span>
-                </label>
-                <input
+                <DatePicker
                   id="dateOfBirth"
-                  name="dateOfBirth"
-                  type="date"
+                  label={<>Date of Birth <span className="text-red-500">*</span></>}
                   value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                  className="input-field"
-                  required
+                  onChange={setDateOfBirth}
                 />
               </div>
 

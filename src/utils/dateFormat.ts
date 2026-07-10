@@ -20,3 +20,15 @@ export const endOfWeek = (date: Date): Date => {
   result.setDate(result.getDate() + 6);
   return result;
 };
+
+export const startOfMonth = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), 1);
+
+export const endOfMonth = (date: Date): Date => new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+export const formatMonthLabel = (date: Date): string =>
+  date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+export const parseDateLocal = (value: string): Date => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};

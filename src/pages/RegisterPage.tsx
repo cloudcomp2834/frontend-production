@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { patientService } from '../services';
 import { getErrorMessage } from '../services/api';
+import { DatePicker } from '../components/ui/DatePicker';
 import type { CreatePatientUserRequest } from '../types';
 
 export const RegisterPage = () => {
@@ -30,6 +31,11 @@ export const RegisterPage = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.dateOfBirth) {
+      setError('Please select your date of birth');
+      return;
+    }
 
     // Validate password match
     if (formData.password !== confirmPassword) {
@@ -141,17 +147,11 @@ export const RegisterPage = () => {
 
               {/* Date of Birth */}
               <div>
-                <label htmlFor="dateOfBirth" className="label">
-                  Date of Birth <span className="text-red-500">*</span>
-                </label>
-                <input
+                <DatePicker
                   id="dateOfBirth"
-                  name="dateOfBirth"
-                  type="date"
+                  label={<>Date of Birth <span className="text-red-500">*</span></>}
                   value={formData.dateOfBirth}
-                  onChange={handleChange}
-                  className="input-field"
-                  required
+                  onChange={(v) => setFormData({ ...formData, dateOfBirth: v })}
                 />
               </div>
 

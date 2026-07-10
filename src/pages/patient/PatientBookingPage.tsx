@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type FormEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { referenceService, scheduleService, appointmentService } from '../../services';
@@ -143,6 +143,7 @@ export const PatientBookingPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
     doctorId: 0,
@@ -240,6 +241,17 @@ export const PatientBookingPage = () => {
   useEffect(() => {
     loadAvailableSlots();
   }, [loadAvailableSlots]);
+
+  useEffect(() => {
+    if (!calendarOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setCalendarOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [calendarOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const numericFields = ['doctorId', 'appointmentCategoryId'];
@@ -439,7 +451,7 @@ export const PatientBookingPage = () => {
           <label htmlFor="appointmentDate" className="label">
             Appointment Date <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
+          <div className="relative" ref={calendarRef}>
             <input
               id="appointmentDate"
               name="appointmentDate"
@@ -512,15 +524,8 @@ export const PatientBookingPage = () => {
                   })}
                 </div>
 
-                <div className="mt-3 flex items-center justify-between text-xs text-gray-600">
-                  <span>{availabilityLoading ? 'Loading available dates...' : 'Only scheduled days can be selected.'}</span>
-                  <button
-                    type="button"
-                    onClick={() => setCalendarOpen(false)}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    Close
-                  </button>
+                <div className="mt-3 text-xs text-gray-600">
+                  {availabilityLoading ? 'Loading available dates...' : 'Only scheduled days can be selected.'}
                 </div>
               </div>
             )}
