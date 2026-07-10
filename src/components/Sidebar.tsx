@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from './ui/SidebarProvider';
 import { ADMIN_NAV, DOCTOR_NAV, PATIENT_NAV, type NavItem } from '../utils/sidebarNav';
+import icon from '../assets/icon.png';
 
 const NAV_BY_ROLE: Record<'Admin' | 'Doctor' | 'Patient', NavItem[]> = {
   Admin: ADMIN_NAV,
@@ -12,9 +13,7 @@ const NAV_BY_ROLE: Record<'Admin' | 'Doctor' | 'Patient', NavItem[]> = {
 const SidebarContent = ({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) => (
   <>
     <div className="flex items-center space-x-2 px-5 h-16 border-b border-gray-200 shrink-0">
-      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-        <span className="text-white font-bold text-lg">P</span>
-      </div>
+      <img src={icon} alt="Pantai Hospital" className="w-8 h-8" />
       <span className="text-lg font-bold text-gray-900">Pantai Hospital</span>
     </div>
     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { patientService } from '../services';
 import { getErrorMessage } from '../services/api';
 import { DatePicker } from '../components/ui/DatePicker';
+import icon from '../assets/icon.png';
 import type { CreatePatientUserRequest } from '../types';
 
 export const RegisterPage = () => {
@@ -77,9 +78,7 @@ export const RegisterPage = () => {
         <div className="card">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-              <span className="text-white font-bold text-2xl">P</span>
-            </div>
+            <img src={icon} alt="Pantai Hospital" className="w-16 h-16 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-gray-900">Patient Registration</h1>
             <p className="text-gray-600 mt-2">Create your account to book appointments</p>
           </div>

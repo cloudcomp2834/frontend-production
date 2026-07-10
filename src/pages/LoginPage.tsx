@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../services/api';
 import { DASHBOARD_PATHS } from '../utils/dashboardPaths';
+import icon from '../assets/icon.png';
 
 const TEST_ACCOUNTS = [
   { role: 'Admin', username: 'admin1', password: 'Password123!' },
@@ -46,9 +47,7 @@ export const LoginPage = () => {
         <div className="card">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-              <span className="text-white font-bold text-2xl">P</span>
-            </div>
+            <img src={icon} alt="Pantai Hospital" className="w-16 h-16 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
             <p className="text-gray-600 mt-2">Sign in to Pantai Hospital Portal</p>
           </div>

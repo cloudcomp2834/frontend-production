@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { DASHBOARD_PATHS } from '../utils/dashboardPaths';
 import { Sidebar } from './Sidebar';
 import { useSidebar } from './ui/SidebarProvider';
+import icon from '../assets/icon.png';
 
 interface LayoutProps {
   children: ReactNode;
@@ -69,9 +70,7 @@ export const Layout = ({ children }: LayoutProps) => {
               {/* Logo */}
               <Link to={isAuthenticated ? getDashboardLink() : '/'} className="flex items-center">
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">P</span>
-                  </div>
+                  <img src={icon} alt="Pantai Hospital" className="w-8 h-8" />
                   <span className="text-xl font-bold text-gray-900">Pantai Hospital</span>
                 </div>
               </Link>
