@@ -4,6 +4,7 @@ import { scheduleService, referenceService } from '../../services';
 import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
+import { TimePicker } from '../../components/ui/TimePicker';
 import type { DoctorScheduleDto, CreateDoctorScheduleRequest, DoctorDirectoryDto } from '../../types';
 
 export const AdminDoctorSchedulePage = () => {
@@ -53,6 +54,12 @@ export const AdminDoctorSchedulePage = () => {
     if (!doctorId) return;
 
     setError('');
+
+    if (!formData.startTime || !formData.endTime) {
+      setError('Please select both start and end time');
+      return;
+    }
+
     try {
       // Append :00 seconds to match backend TimeOnly format (HH:mm:ss)
       const scheduleData: CreateDoctorScheduleRequest = {
@@ -142,28 +149,18 @@ export const AdminDoctorSchedulePage = () => {
                   required
                 />
               </div>
-              <div>
-                <label htmlFor="startTime" className="label">Start Time</label>
-                <input
-                  id="startTime"
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                  className="input-field"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="endTime" className="label">End Time</label>
-                <input
-                  id="endTime"
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                  className="input-field"
-                  required
-                />
-              </div>
+              <TimePicker
+                id="startTime"
+                label="Start Time"
+                value={formData.startTime}
+                onChange={(v) => setFormData({ ...formData, startTime: v })}
+              />
+              <TimePicker
+                id="endTime"
+                label="End Time"
+                value={formData.endTime}
+                onChange={(v) => setFormData({ ...formData, endTime: v })}
+              />
             </div>
             <button type="submit" className="btn-primary">Add Schedule</button>
           </form>

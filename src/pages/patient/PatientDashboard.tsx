@@ -32,12 +32,10 @@ export const PatientDashboard = () => {
     load();
   }, []);
 
-  const upcoming = useMemo(() => {
-    const now = Date.now();
-    return appointments
-      .filter((a) => (a.status === 'Scheduled' || a.status === 'Paid Scheduled') && getAppointmentDateTime(a) >= now)
-      .sort((a, b) => getAppointmentDateTime(a) - getAppointmentDateTime(b));
-  }, [appointments]);
+  const now = Date.now();
+  const upcoming = appointments
+    .filter((a) => (a.status === 'Scheduled' || a.status === 'Paid Scheduled') && getAppointmentDateTime(a) >= now)
+    .sort((a, b) => getAppointmentDateTime(a) - getAppointmentDateTime(b));
 
   const unpaidCount = useMemo(() => appointments.filter((a) => a.status === 'Scheduled').length, [appointments]);
 

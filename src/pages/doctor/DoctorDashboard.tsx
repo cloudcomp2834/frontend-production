@@ -52,13 +52,11 @@ export const DoctorDashboard = () => {
     };
   }, [appointments, schedules]);
 
-  const upcoming = useMemo(() => {
-    const now = Date.now();
-    return appointments
-      .filter((a) => a.status === 'Paid Scheduled' && getAppointmentDateTime(a) >= now)
-      .sort((a, b) => getAppointmentDateTime(a) - getAppointmentDateTime(b))
-      .slice(0, UPCOMING_LIMIT);
-  }, [appointments]);
+  const now = Date.now();
+  const upcoming = appointments
+    .filter((a) => a.status === 'Paid Scheduled' && getAppointmentDateTime(a) >= now)
+    .sort((a, b) => getAppointmentDateTime(a) - getAppointmentDateTime(b))
+    .slice(0, UPCOMING_LIMIT);
 
   if (loading) {
     return (
