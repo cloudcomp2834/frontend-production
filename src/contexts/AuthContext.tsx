@@ -12,6 +12,7 @@ interface AuthContextType {
   role: Role | null;
   isAuthenticated: boolean;
   doctorId: number | null;
+  doctorStatus: string | null;
   patientId: number | null;
   username: string | null;
   login: (credentials: LoginRequest) => Promise<Role>;
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [doctorId, setDoctorId] = useState<number | null>(null);
+  const [doctorStatus, setDoctorStatus] = useState<string | null>(null);
   const [patientId, setPatientId] = useState<number | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(null);
       setRole(null);
       setDoctorId(null);
+      setDoctorStatus(null);
       setPatientId(null);
       setUsername(null);
       localStorage.clear();
@@ -65,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setRole(decoded.role);
           setUsername(decoded.unique_name);
           setDoctorId(decoded.doctor_id ? parseInt(decoded.doctor_id) : null);
+          setDoctorStatus(decoded.doctor_status ?? null);
           setPatientId(decoded.patient_id ? parseInt(decoded.patient_id) : null);
         } catch (error) {
           console.error('Invalid token:', error);
@@ -94,6 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRole(response.role);
     setUsername(decoded.unique_name);
     setDoctorId(decoded.doctor_id ? parseInt(decoded.doctor_id) : null);
+    setDoctorStatus(decoded.doctor_status ?? null);
     setPatientId(decoded.patient_id ? parseInt(decoded.patient_id) : null);
 
     return response.role;
@@ -104,6 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     setRole(null);
     setDoctorId(null);
+    setDoctorStatus(null);
     setPatientId(null);
     setUsername(null);
     window.location.href = '/login';
@@ -116,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role,
         isAuthenticated: !!token,
         doctorId,
+        doctorStatus,
         patientId,
         username,
         login,

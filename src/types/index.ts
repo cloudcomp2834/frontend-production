@@ -15,6 +15,7 @@ export interface DecodedToken {
   role: 'Admin' | 'Doctor' | 'Patient';
   sub: string;
   doctor_id?: string;
+  doctor_status?: string;
   patient_id?: string;
   jti: string;
   exp: number;
