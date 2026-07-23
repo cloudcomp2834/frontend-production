@@ -6,6 +6,7 @@ import { DASHBOARD_PATHS } from '../utils/dashboardPaths';
 import { Sidebar } from './Sidebar';
 import { useSidebar } from './ui/SidebarProvider';
 import { patientService, doctorService } from '../services';
+import { registerProfilePictureListener } from '../contexts/profileBus';
 import icon from '../assets/icon.png';
 
 interface LayoutProps {
@@ -38,6 +39,13 @@ export const Layout = ({ children }: LayoutProps) => {
         .catch(() => setAvatarUrl(null));
     }
   }, [showAvatar, role, patientId]);
+
+  // Lets profile-edit pages push a fresh picture URL here immediately after upload,
+  // instead of this avatar only ever refreshing on next login/remount.
+  useEffect(() => {
+    registerProfilePictureListener((url) => setAvatarUrl(url));
+    return () => registerProfilePictureListener(null);
+  }, []);
 
   const showBackArrow = !NO_BACK_ARROW_PATHS.includes(location.pathname);
   const canGoBack = location.key !== 'default';

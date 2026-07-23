@@ -85,7 +85,7 @@ export const PatientViewDoctorsPage = () => {
                   <img
                     src={doctor.profilePictureThumbnailUrl}
                     alt={doctor.name}
-                    className="w-28 h-28 rounded-full object-cover shadow-lg"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-lg">

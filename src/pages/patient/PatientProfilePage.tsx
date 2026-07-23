@@ -5,6 +5,7 @@ import { patientService } from '../../services';
 import { ApiError, getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import { DatePicker } from '../../components/ui/DatePicker';
+import { notifyProfilePictureUpdated } from '../../contexts/profileBus';
 import type { PatientUserDto } from '../../types';
 
 export const PatientProfilePage = () => {
@@ -72,6 +73,7 @@ export const PatientProfilePage = () => {
     try {
       const { profilePictureUrl } = await patientService.uploadProfilePicture(patientId, e.target.files[0]);
       setPictureUrl(profilePictureUrl);
+      notifyProfilePictureUpdated(profilePictureUrl);
       toast.success('Profile picture updated');
     } catch (err) {
       const message = getErrorMessage(err, 'Failed to upload profile picture');
