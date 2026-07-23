@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { paymentReportService, isPaymentReportConfigured } from '../../services/paymentReportApi';
 import { todayLocal } from '../../utils/dateFormat';
@@ -82,8 +82,8 @@ export const AdminPaymentReportsPage = () => {
               rel="noopener noreferrer"
               className="btn-secondary inline-flex items-center gap-2"
             >
-              <Download className="w-4 h-4" />
-              Download Report
+              <ExternalLink className="w-4 h-4" />
+              View Report
             </a>
           )}
         </div>
