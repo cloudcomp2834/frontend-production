@@ -32,6 +32,10 @@ export interface CreatePatientUserRequest {
   email: string;
 }
 
+export interface ProfilePictureResponse {
+  profilePictureUrl: string;
+}
+
 export interface UpdatePatientProfileRequest {
   name: string;
   dateOfBirth: string; // YYYY-MM-DD
@@ -71,6 +75,11 @@ export interface DoctorDirectoryDto {
   specialismName: string;
   hospitalId: number;
   hospitalName: string;
+}
+
+export interface MyDoctorProfileResponse {
+  doctor: DoctorDto;
+  profilePictureUrl: string | null;
 }
 
 export interface CreateDoctorWithUserRequest {

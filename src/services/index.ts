@@ -6,8 +6,10 @@ import type {
   PatientUserDto,
   UpdatePatientProfileRequest,
   UpdateDoctorProfileRequest,
+  ProfilePictureResponse,
   DoctorDto,
   DoctorDirectoryDto,
+  MyDoctorProfileResponse,
   CreateDoctorWithUserRequest,
   DoctorScheduleDto,
   DoctorAvailabilityDto,
@@ -68,6 +70,21 @@ export const patientService = {
     });
     return data;
   },
+
+  uploadProfilePicture: async (patientId: number, file: File): Promise<ProfilePictureResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiFetch(`/api/patientuser/${patientId}/profile-picture`, {
+      method: 'POST',
+      body: formData,
+    });
+    return data;
+  },
+
+  getProfilePicture: async (patientId: number): Promise<ProfilePictureResponse> => {
+    const { data } = await apiFetch(`/api/patientuser/${patientId}/profile-picture`);
+    return data;
+  },
 };
 
 // Reference Data (Public)
@@ -102,6 +119,11 @@ export const doctorService = {
 
   getById: async (id: number): Promise<DoctorDto> => {
     const { data } = await apiFetch(`/api/doctor/${id}`);
+    return data;
+  },
+
+  getMyProfile: async (): Promise<MyDoctorProfileResponse> => {
+    const { data } = await apiFetch('/api/doctor/me');
     return data;
   },
 

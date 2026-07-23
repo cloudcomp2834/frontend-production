@@ -28,6 +28,7 @@ export const DOCTOR_NAV: NavItem[] = [
   { label: 'Dashboard', to: '/doctor', icon: LayoutDashboard, end: true },
   { label: 'My Timetable', to: '/doctor/schedule', icon: Clock },
   { label: 'My Appointments', to: '/doctor/appointments', icon: CalendarCheck },
+  { label: 'My Profile', to: '/doctor/profile', icon: UserCircle },
 ];
 
 export const PATIENT_NAV: NavItem[] = [

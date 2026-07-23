@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Pencil, CalendarDays, ToggleLeft, ToggleRight } from 'lucide-react';
 import { doctorService, referenceService } from '../../services';
 import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
@@ -136,24 +137,31 @@ export const AdminDoctorsPage = () => {
                       {doctor.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                     <Link
                       to={`/admin/doctors/${doctor.doctorId}/edit`}
-                      className="text-primary hover:text-primary-dark"
+                      title="Edit"
+                      className="inline-flex text-primary hover:text-primary-dark"
                     >
-                      Edit
+                      <Pencil className="w-5 h-5" />
                     </Link>
                     <Link
                       to={`/admin/doctors/${doctor.doctorId}/schedule`}
-                      className="text-primary hover:text-primary-dark"
+                      title="Schedule"
+                      className="inline-flex text-primary hover:text-primary-dark"
                     >
-                      Schedule
+                      <CalendarDays className="w-5 h-5" />
                     </Link>
                     <button
                       onClick={() => handleStatusToggle(doctor.doctorId, doctor.status)}
-                      className="text-yellow-600 hover:text-yellow-900"
+                      title={doctor.status === 'Active' ? 'Deactivate' : 'Activate'}
+                      className="inline-flex text-yellow-600 hover:text-yellow-900"
                     >
-                      {doctor.status === 'Active' ? 'Deactivate' : 'Activate'}
+                      {doctor.status === 'Active' ? (
+                        <ToggleRight className="w-5 h-5" />
+                      ) : (
+                        <ToggleLeft className="w-5 h-5" />
+                      )}
                     </button>
                   </td>
                 </tr>

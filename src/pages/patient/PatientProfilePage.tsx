@@ -1,7 +1,8 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
+import { UserCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { patientService } from '../../services';
-import { getErrorMessage } from '../../services/api';
+import { ApiError, getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import { DatePicker } from '../../components/ui/DatePicker';
 import type { PatientUserDto } from '../../types';
@@ -13,6 +14,10 @@ export const PatientProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
@@ -23,6 +28,7 @@ export const PatientProfilePage = () => {
   useEffect(() => {
     if (patientId) {
       loadProfile();
+      loadProfilePicture();
     }
   }, [patientId]);
 
@@ -44,6 +50,38 @@ export const PatientProfilePage = () => {
     }
   };
 
+  const loadProfilePicture = async () => {
+    if (!patientId) return;
+
+    try {
+      const { profilePictureUrl } = await patientService.getProfilePicture(patientId);
+      setPictureUrl(profilePictureUrl);
+    } catch (err) {
+      // No picture uploaded yet is a normal state, not an error to show.
+      if (!(err instanceof ApiError && err.status === 404)) {
+        const message = getErrorMessage(err, 'Failed to load profile picture');
+        if (message) toast.error(message);
+      }
+    }
+  };
+
+  const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!patientId || !e.target.files?.[0]) return;
+
+    setUploadingPicture(true);
+    try {
+      const { profilePictureUrl } = await patientService.uploadProfilePicture(patientId, e.target.files[0]);
+      setPictureUrl(profilePictureUrl);
+      toast.success('Profile picture updated');
+    } catch (err) {
+      const message = getErrorMessage(err, 'Failed to upload profile picture');
+      if (message) toast.error(message);
+    } finally {
+      setUploadingPicture(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const startEditing = () => {
     if (!profile) return;
     setName(profile.name);
@@ -59,13 +97,13 @@ export const PatientProfilePage = () => {
 
     setSaving(true);
     try {
-      const updated = await patientService.updateProfile(patientId, {
+      await patientService.updateProfile(patientId, {
         name,
         dateOfBirth,
         contactNumber,
         email,
       });
-      setProfile(updated);
+      await loadProfile(); // re-fetch so the view always reflects what the server actually saved
       setEditing(false);
       toast.success('Profile updated successfully');
     } catch (err) {
@@ -110,9 +148,31 @@ export const PatientProfilePage = () => {
         )}
       </div>
 
-      <div className="card">
+      <div className="card space-y-6">
+        <div className="flex items-center gap-4">
+          {pictureUrl ? (
+            <img src={pictureUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
+          ) : (
+            <UserCircle className="w-20 h-20 text-gray-300" />
+          )}
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png"
+              onChange={handlePictureChange}
+              className="hidden"
+              id="profilePicture"
+            />
+            <label htmlFor="profilePicture" className="btn-secondary cursor-pointer inline-block">
+              {uploadingPicture ? 'Uploading...' : pictureUrl ? 'Change Photo' : 'Upload Photo'}
+            </label>
+            <p className="text-xs text-gray-500 mt-1">JPEG or PNG, up to 5 MB</p>
+          </div>
+        </div>
+
         {editing ? (
-          <form onSubmit={handleSave} className="space-y-6">
+          <form onSubmit={handleSave} className="space-y-6 pt-6 border-t border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="label">
@@ -166,7 +226,7 @@ export const PatientProfilePage = () => {
 
             <p className="text-sm text-gray-500">
               IC/Passport number, username, and role can't be changed here — contact hospital
-              administration if those need updating.
+              administration at +60123456789 if those need updating.
             </p>
 
             <div className="flex justify-end space-x-4 pt-2 border-t border-gray-200">
@@ -184,47 +244,45 @@ export const PatientProfilePage = () => {
             </div>
           </form>
         ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="label">Full Name</label>
-                <p className="text-gray-900 font-medium">{profile.name}</p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200">
+            <div>
+              <label className="label">Full Name</label>
+              <p className="text-gray-900 font-medium">{profile.name}</p>
+            </div>
 
-              <div>
-                <label className="label">IC/Passport Number</label>
-                <p className="text-gray-900 font-medium">{profile.icPassport}</p>
-              </div>
+            <div>
+              <label className="label">IC/Passport Number</label>
+              <p className="text-gray-900 font-medium">{profile.icPassport}</p>
+            </div>
 
-              <div>
-                <label className="label">Username</label>
-                <p className="text-gray-900 font-medium">{profile.username}</p>
-              </div>
+            <div>
+              <label className="label">Username</label>
+              <p className="text-gray-900 font-medium">{profile.username}</p>
+            </div>
 
-              <div>
-                <label className="label">Date of Birth</label>
-                <p className="text-gray-900 font-medium">{profile.dateOfBirth}</p>
-              </div>
+            <div>
+              <label className="label">Date of Birth</label>
+              <p className="text-gray-900 font-medium">{profile.dateOfBirth}</p>
+            </div>
 
-              <div>
-                <label className="label">Contact Number</label>
-                <p className="text-gray-900 font-medium">{profile.contactNumber}</p>
-              </div>
+            <div>
+              <label className="label">Contact Number</label>
+              <p className="text-gray-900 font-medium">{profile.contactNumber}</p>
+            </div>
 
-              <div>
-                <label className="label">Email Address</label>
-                <p className="text-gray-900 font-medium">{profile.email}</p>
-              </div>
+            <div>
+              <label className="label">Email Address</label>
+              <p className="text-gray-900 font-medium">{profile.email}</p>
+            </div>
 
-              <div>
-                <label className="label">Patient ID</label>
-                <p className="text-gray-900 font-medium">#{profile.patientId}</p>
-              </div>
+            <div>
+              <label className="label">Patient ID</label>
+              <p className="text-gray-900 font-medium">#{profile.patientId}</p>
+            </div>
 
-              <div>
-                <label className="label">Account Role</label>
-                <p className="text-gray-900 font-medium">{profile.role}</p>
-              </div>
+            <div>
+              <label className="label">Account Role</label>
+              <p className="text-gray-900 font-medium">{profile.role}</p>
             </div>
           </div>
         )}
