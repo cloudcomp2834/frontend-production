@@ -138,6 +138,12 @@ export const AdminDoctorsPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <Link
+                      to={`/admin/doctors/${doctor.doctorId}/edit`}
+                      className="text-primary hover:text-primary-dark"
+                    >
+                      Edit
+                    </Link>
+                    <Link
                       to={`/admin/doctors/${doctor.doctorId}/schedule`}
                       className="text-primary hover:text-primary-dark"
                     >

@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { patientService } from '../services';
 import { getErrorMessage } from '../services/api';
+import { DatePicker } from '../components/ui/DatePicker';
+import icon from '../assets/icon.png';
 import type { CreatePatientUserRequest } from '../types';
 
 export const RegisterPage = () => {
@@ -30,6 +32,11 @@ export const RegisterPage = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.dateOfBirth) {
+      setError('Please select your date of birth');
+      return;
+    }
 
     // Validate password match
     if (formData.password !== confirmPassword) {
@@ -71,9 +78,7 @@ export const RegisterPage = () => {
         <div className="card">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-              <span className="text-white font-bold text-2xl">P</span>
-            </div>
+            <img src={icon} alt="Pantai Hospital" className="w-16 h-16 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-gray-900">Patient Registration</h1>
             <p className="text-gray-600 mt-2">Create your account to book appointments</p>
           </div>
@@ -141,17 +146,11 @@ export const RegisterPage = () => {
 
               {/* Date of Birth */}
               <div>
-                <label htmlFor="dateOfBirth" className="label">
-                  Date of Birth <span className="text-red-500">*</span>
-                </label>
-                <input
+                <DatePicker
                   id="dateOfBirth"
-                  name="dateOfBirth"
-                  type="date"
+                  label={<>Date of Birth <span className="text-red-500">*</span></>}
                   value={formData.dateOfBirth}
-                  onChange={handleChange}
-                  className="input-field"
-                  required
+                  onChange={(v) => setFormData({ ...formData, dateOfBirth: v })}
                 />
               </div>
 

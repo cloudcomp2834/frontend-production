@@ -4,7 +4,11 @@ import { scheduleService } from '../../services';
 import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
+import { TimePicker } from '../../components/ui/TimePicker';
+import { DatePicker } from '../../components/ui/DatePicker';
 import type { DoctorScheduleDto, CreateDoctorScheduleRequest } from '../../types';
+
+const todayIso = () => new Date().toISOString().split('T')[0];
 
 export const DoctorSchedulePage = () => {
   const { doctorId } = useAuth();
@@ -45,6 +49,17 @@ export const DoctorSchedulePage = () => {
     if (!doctorId) return;
 
     setError('');
+
+    if (!formData.date) {
+      setError('Please select a date');
+      return;
+    }
+
+    if (!formData.startTime || !formData.endTime) {
+      setError('Please select both start and end time');
+      return;
+    }
+
     try {
       // Append :00 seconds to match backend TimeOnly format (HH:mm:ss)
       const scheduleData: CreateDoctorScheduleRequest = {
@@ -113,40 +128,25 @@ export const DoctorSchedulePage = () => {
           <h3 className="text-lg font-semibold mb-4">Add New Time Slot</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="date" className="label">Date</label>
-                <input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="input-field"
-                  min={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="startTime" className="label">Start Time</label>
-                <input
-                  id="startTime"
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                  className="input-field"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="endTime" className="label">End Time</label>
-                <input
-                  id="endTime"
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                  className="input-field"
-                  required
-                />
-              </div>
+              <DatePicker
+                id="date"
+                label="Date"
+                value={formData.date}
+                onChange={(v) => setFormData({ ...formData, date: v })}
+                minDate={todayIso()}
+              />
+              <TimePicker
+                id="startTime"
+                label="Start Time"
+                value={formData.startTime}
+                onChange={(v) => setFormData({ ...formData, startTime: v })}
+              />
+              <TimePicker
+                id="endTime"
+                label="End Time"
+                value={formData.endTime}
+                onChange={(v) => setFormData({ ...formData, endTime: v })}
+              />
             </div>
             <button type="submit" className="btn-primary">Create Schedule</button>
           </form>

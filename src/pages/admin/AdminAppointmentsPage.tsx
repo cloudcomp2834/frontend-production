@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
 import { appointmentService } from '../../services';
 import { getErrorMessage } from '../../services/api';
+import { StatusBadge } from '../../components/ui/StatusBadge';
 import type { AppointmentDto } from '../../types';
+
+type DateSortDirection = 'asc' | 'desc';
+
+const getAppointmentDateTime = (appointment: AppointmentDto) =>
+  new Date(`${appointment.appointmentDate}T${appointment.startTime}`).getTime();
+
+const normalizeSearchValue = (value: string) =>
+  value.toLowerCase().replace(/\s+/g, '');
 
 export const AdminAppointmentsPage = () => {
   const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateSortDirection, setDateSortDirection] = useState<DateSortDirection>('desc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -15,9 +26,7 @@ export const AdminAppointmentsPage = () => {
   const loadAppointments = async () => {
     try {
       const data = await appointmentService.getAll();
-      setAppointments(data.sort((a, b) => 
-        new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
-      ));
+      setAppointments(data);
     } catch (err) {
       const message = getErrorMessage(err, 'Failed to load appointments');
       if (message) setError(message);
@@ -26,17 +35,25 @@ export const AdminAppointmentsPage = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'Paid Scheduled':
-        return 'bg-green-100 text-green-800';
-      case 'Cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const filteredAppointments = appointments
+    .filter((appointment) => {
+      const term = normalizeSearchValue(searchTerm.trim());
+      if (!term) return true;
+
+      return [
+        appointment.appointmentId.toString(),
+        `#${appointment.appointmentId}`,
+        appointment.doctorName,
+        appointment.patientName,
+      ].some((value) => normalizeSearchValue(value).includes(term));
+    })
+    .sort((a, b) => {
+      const diff = getAppointmentDateTime(a) - getAppointmentDateTime(b);
+      return dateSortDirection === 'asc' ? diff : -diff;
+    });
+
+  const handleDateSortToggle = () => {
+    setDateSortDirection((current) => current === 'asc' ? 'desc' : 'asc');
   };
 
   if (loading) {
@@ -60,9 +77,25 @@ export const AdminAppointmentsPage = () => {
         </div>
       )}
 
+      <div className="mb-4">
+        <label htmlFor="appointmentSearch" className="label">
+          Search Appointments
+        </label>
+        <input
+          id="appointmentSearch"
+          type="search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="input-field max-w-md"
+          placeholder="Search by #ID, doctor name, or patient name"
+        />
+      </div>
+
       <div className="card overflow-hidden">
         {appointments.length === 0 ? (
           <div className="text-center py-12 text-gray-500">No appointments found</div>
+        ) : filteredAppointments.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">No matching appointments found</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -72,13 +105,20 @@ export const AdminAppointmentsPage = () => {
                     ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date & Time
+                    <button
+                      type="button"
+                      onClick={handleDateSortToggle}
+                      className="flex items-center gap-1 uppercase tracking-wider hover:text-gray-700"
+                    >
+                      Date & Time
+                      <span aria-hidden="true">{dateSortDirection === 'asc' ? '↑' : '↓'}</span>
+                    </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Doctor ID
+                    Doctor
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Patient ID
+                    Patient
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
@@ -89,7 +129,7 @@ export const AdminAppointmentsPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {appointments.map((appointment) => (
+                {filteredAppointments.map((appointment) => (
                   <tr key={appointment.appointmentId} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{appointment.appointmentId}
@@ -101,15 +141,13 @@ export const AdminAppointmentsPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      Dr #{appointment.doctorId}
+                      {appointment.doctorName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      Patient #{appointment.patientId}
+                      {appointment.patientName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
-                        {appointment.status}
-                      </span>
+                      <StatusBadge status={appointment.status} />
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
                       {appointment.medicalConcern || '-'}

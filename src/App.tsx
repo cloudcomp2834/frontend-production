@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { PublicOnlyRoute } from './components/PublicOnlyRoute';
 import { ToastProvider } from './components/ui/ToastProvider';
 import { ConfirmProvider } from './components/ui/ConfirmProvider';
+import { SidebarProvider } from './components/ui/SidebarProvider';
 import { DASHBOARD_PATHS } from './utils/dashboardPaths';
 
 // Auth pages
@@ -16,6 +17,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminDoctorsPage } from './pages/admin/AdminDoctorsPage';
 import { AdminAddDoctorPage } from './pages/admin/AdminAddDoctorPage';
+import { AdminEditDoctorPage } from './pages/admin/AdminEditDoctorPage';
 import { AdminDoctorSchedulePage } from './pages/admin/AdminDoctorSchedulePage';
 import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
@@ -50,6 +52,7 @@ function App() {
       <BrowserRouter>
         <ToastProvider>
           <ConfirmProvider>
+            <SidebarProvider>
             <Layout>
               <Routes>
             {/* Public routes */}
@@ -93,6 +96,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['Admin']}>
                   <AdminAddDoctorPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/doctors/:doctorId/edit"
+              element={
+                <ProtectedRoute allowedRoles={['Admin']}>
+                  <AdminEditDoctorPage />
                 </ProtectedRoute>
               }
             />
@@ -209,6 +220,7 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>
+            </SidebarProvider>
           </ConfirmProvider>
         </ToastProvider>
       </BrowserRouter>

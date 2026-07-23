@@ -15,6 +15,7 @@ export interface DecodedToken {
   role: 'Admin' | 'Doctor' | 'Patient';
   sub: string;
   doctor_id?: string;
+  doctor_status?: string;
   patient_id?: string;
   jti: string;
   exp: number;
@@ -25,6 +26,13 @@ export interface CreatePatientUserRequest {
   icPassport: string;
   username: string;
   password: string;
+  name: string;
+  dateOfBirth: string; // YYYY-MM-DD
+  contactNumber: string;
+  email: string;
+}
+
+export interface UpdatePatientProfileRequest {
   name: string;
   dateOfBirth: string; // YYYY-MM-DD
   contactNumber: string;
@@ -77,6 +85,14 @@ export interface CreateDoctorWithUserRequest {
   hospitalId: number;
 }
 
+export interface UpdateDoctorProfileRequest {
+  name: string;
+  specialistId: number;
+  contactNumber: string;
+  medicalLicense: string;
+  hospitalId: number;
+}
+
 // Schedule Types
 export interface DoctorScheduleDto {
   scheduleId: number;
@@ -110,7 +126,9 @@ export interface AppointmentDto {
   appointmentId: number;
   appointmentCategoryId: number;
   doctorId: number;
+  doctorName: string;
   patientId: number;
+  patientName: string;
   appointmentDate: string;
   status: 'Scheduled' | 'Paid Scheduled' | 'Cancelled' | 'Completed' | 'No-show' | 'Expired';
   medicalConcern: string;

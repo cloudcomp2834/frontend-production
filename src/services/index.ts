@@ -4,6 +4,8 @@ import type {
   LoginResponse,
   CreatePatientUserRequest,
   PatientUserDto,
+  UpdatePatientProfileRequest,
+  UpdateDoctorProfileRequest,
   DoctorDto,
   DoctorDirectoryDto,
   CreateDoctorWithUserRequest,
@@ -58,6 +60,14 @@ export const patientService = {
     const { data } = await apiFetch(`/api/patientuser/${patientId}`);
     return data;
   },
+
+  updateProfile: async (patientId: number, profile: UpdatePatientProfileRequest): Promise<PatientUserDto> => {
+    const { data } = await apiFetch(`/api/patientuser/${patientId}`, {
+      method: 'PUT',
+      body: JSON.stringify(profile),
+    });
+    return data;
+  },
 };
 
 // Reference Data (Public)
@@ -107,6 +117,14 @@ export const doctorService = {
     const { data } = await apiFetch(`/api/doctor/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    });
+    return data;
+  },
+
+  updateProfile: async (id: number, profile: UpdateDoctorProfileRequest): Promise<DoctorDto> => {
+    const { data } = await apiFetch(`/api/doctor/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(profile),
     });
     return data;
   },

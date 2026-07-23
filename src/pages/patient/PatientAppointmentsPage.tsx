@@ -4,6 +4,7 @@ import { appointmentService, medicalRecordService } from '../../services';
 import { apiFetch, ApiError, getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
+import { StatusBadge } from '../../components/ui/StatusBadge';
 import type { AppointmentDto, MedicalRecordDto } from '../../types';
 
 type MedicalRecordStatus = 'idle' | 'loading' | 'success' | 'not_created' | 'error';
@@ -99,25 +100,6 @@ export const PatientAppointmentsPage = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'Paid Scheduled':
-        return 'bg-green-100 text-green-800';
-      case 'Completed':
-        return 'bg-purple-100 text-purple-800';
-      case 'No-show':
-        return 'bg-orange-100 text-orange-800';
-      case 'Expired':
-        return 'bg-gray-100 text-gray-800';
-      case 'Cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -169,9 +151,7 @@ export const PatientAppointmentsPage = () => {
                     <h3 className="text-lg font-semibold text-gray-900">
                       Appointment #{appointment.appointmentId}
                     </h3>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
-                      {appointment.status}
-                    </span>
+                    <StatusBadge status={appointment.status} />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
