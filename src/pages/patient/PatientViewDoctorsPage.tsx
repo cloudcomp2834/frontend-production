@@ -79,13 +79,21 @@ export const PatientViewDoctorsPage = () => {
               state={{ selectedDoctorId: doctor.doctorId }}
               className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer overflow-hidden"
             >
-              {/* Doctor Image Placeholder */}
+              {/* Doctor Image */}
               <div className="w-full h-48 bg-gradient-to-br from-pantai-100 to-pantai-200 flex items-center justify-center">
-                <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-lg">
-                  <svg className="w-16 h-16 text-pantai-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                  </svg>
-                </div>
+                {doctor.profilePictureThumbnailUrl ? (
+                  <img
+                    src={doctor.profilePictureThumbnailUrl}
+                    alt={doctor.name}
+                    className="w-28 h-28 rounded-full object-cover shadow-lg"
+                  />
+                ) : (
+                  <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-16 h-16 text-pantai-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
               </div>
 
               {/* Doctor Info */}

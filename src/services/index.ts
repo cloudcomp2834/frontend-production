@@ -10,6 +10,7 @@ import type {
   DoctorDto,
   DoctorDirectoryDto,
   MyDoctorProfileResponse,
+  DoctorProfilePictureResponse,
   CreateDoctorWithUserRequest,
   DoctorScheduleDto,
   DoctorAvailabilityDto,
@@ -148,6 +149,21 @@ export const doctorService = {
       method: 'PUT',
       body: JSON.stringify(profile),
     });
+    return data;
+  },
+
+  uploadProfilePicture: async (id: number, file: File): Promise<DoctorProfilePictureResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiFetch(`/api/doctor/${id}/profile-picture`, {
+      method: 'POST',
+      body: formData,
+    });
+    return data;
+  },
+
+  getProfilePicture: async (id: number): Promise<{ profilePictureUrl: string }> => {
+    const { data } = await apiFetch(`/api/doctor/${id}/profile-picture`);
     return data;
   },
 };

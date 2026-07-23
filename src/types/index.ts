@@ -75,6 +75,12 @@ export interface DoctorDirectoryDto {
   specialismName: string;
   hospitalId: number;
   hospitalName: string;
+  profilePictureThumbnailUrl?: string;
+}
+
+export interface DoctorProfilePictureResponse {
+  profilePictureUrl: string;
+  profilePictureThumbnailUrl: string;
 }
 
 export interface MyDoctorProfileResponse {

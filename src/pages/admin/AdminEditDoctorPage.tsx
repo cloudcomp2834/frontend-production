@@ -1,7 +1,8 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { UserCircle } from 'lucide-react';
 import { doctorService, referenceService } from '../../services';
-import { getErrorMessage } from '../../services/api';
+import { ApiError, getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import type { UpdateDoctorProfileRequest, HospitalDto, SpecialismDto } from '../../types';
 
@@ -14,6 +15,10 @@ export const AdminEditDoctorPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<UpdateDoctorProfileRequest>({
     name: '',
@@ -50,6 +55,33 @@ export const AdminEditDoctorPage = () => {
       if (message) setError(message);
     } finally {
       setLoading(false);
+    }
+
+    try {
+      const { profilePictureUrl } = await doctorService.getProfilePicture(Number(doctorId));
+      setPictureUrl(profilePictureUrl);
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) {
+        const message = getErrorMessage(err, 'Failed to load profile picture');
+        if (message) toast.error(message);
+      }
+    }
+  };
+
+  const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!doctorId || !e.target.files?.[0]) return;
+
+    setUploadingPicture(true);
+    try {
+      const { profilePictureUrl } = await doctorService.uploadProfilePicture(Number(doctorId), e.target.files[0]);
+      setPictureUrl(profilePictureUrl);
+      toast.success('Profile picture updated');
+    } catch (err) {
+      const message = getErrorMessage(err, 'Failed to upload profile picture');
+      if (message) toast.error(message);
+    } finally {
+      setUploadingPicture(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -102,6 +134,30 @@ export const AdminEditDoctorPage = () => {
           {error}
         </div>
       )}
+
+      <div className="card space-y-6 mb-6">
+        <div className="flex items-center gap-4">
+          {pictureUrl ? (
+            <img src={pictureUrl} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
+          ) : (
+            <UserCircle className="w-20 h-20 text-gray-300" />
+          )}
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png"
+              onChange={handlePictureChange}
+              className="hidden"
+              id="profilePicture"
+            />
+            <label htmlFor="profilePicture" className="btn-secondary cursor-pointer inline-block">
+              {uploadingPicture ? 'Uploading...' : pictureUrl ? 'Change Photo' : 'Upload Photo'}
+            </label>
+            <p className="text-xs text-gray-500 mt-1">JPEG or PNG, up to 5 MB</p>
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="card space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -1,10 +1,11 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { Menu, UserCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { DASHBOARD_PATHS } from '../utils/dashboardPaths';
 import { Sidebar } from './Sidebar';
 import { useSidebar } from './ui/SidebarProvider';
+import { patientService, doctorService } from '../services';
 import icon from '../assets/icon.png';
 
 interface LayoutProps {
@@ -14,10 +15,29 @@ interface LayoutProps {
 const NO_BACK_ARROW_PATHS = ['/', '/login', '/register', '/admin', '/doctor', '/patient'];
 
 export const Layout = ({ children }: LayoutProps) => {
-  const { isAuthenticated, role, username, logout } = useAuth();
+  const { isAuthenticated, role, username, patientId, logout } = useAuth();
   const { toggle } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const showAvatar = isAuthenticated && (role === 'Patient' || role === 'Doctor');
+
+  useEffect(() => {
+    if (!showAvatar) {
+      setAvatarUrl(null);
+      return;
+    }
+
+    if (role === 'Patient' && patientId) {
+      patientService.getProfilePicture(patientId)
+        .then((r) => setAvatarUrl(r.profilePictureUrl))
+        .catch(() => setAvatarUrl(null));
+    } else if (role === 'Doctor') {
+      doctorService.getMyProfile()
+        .then((r) => setAvatarUrl(r.profilePictureUrl))
+        .catch(() => setAvatarUrl(null));
+    }
+  }, [showAvatar, role, patientId]);
 
   const showBackArrow = !NO_BACK_ARROW_PATHS.includes(location.pathname);
   const canGoBack = location.key !== 'default';
@@ -80,6 +100,13 @@ export const Layout = ({ children }: LayoutProps) => {
             <nav className="flex items-center space-x-4">
               {isAuthenticated ? (
                 <>
+                  {showAvatar && (
+                    avatarUrl ? (
+                      <img src={avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <UserCircle className="w-8 h-8 text-gray-300" />
+                    )
+                  )}
                   <span className="text-sm text-gray-600">
                     Welcome, <span className="font-semibold">{username}</span> ({role})
                   </span>
