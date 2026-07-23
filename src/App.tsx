@@ -17,6 +17,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminDoctorsPage } from './pages/admin/AdminDoctorsPage';
 import { AdminAddDoctorPage } from './pages/admin/AdminAddDoctorPage';
+import { AdminEditDoctorPage } from './pages/admin/AdminEditDoctorPage';
 import { AdminDoctorSchedulePage } from './pages/admin/AdminDoctorSchedulePage';
 import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
@@ -95,6 +96,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['Admin']}>
                   <AdminAddDoctorPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/doctors/:doctorId/edit"
+              element={
+                <ProtectedRoute allowedRoles={['Admin']}>
+                  <AdminEditDoctorPage />
                 </ProtectedRoute>
               }
             />

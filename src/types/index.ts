@@ -32,6 +32,13 @@ export interface CreatePatientUserRequest {
   email: string;
 }
 
+export interface UpdatePatientProfileRequest {
+  name: string;
+  dateOfBirth: string; // YYYY-MM-DD
+  contactNumber: string;
+  email: string;
+}
+
 export interface PatientUserDto {
   patientId: number;
   icPassport: string;
@@ -74,6 +81,14 @@ export interface CreateDoctorWithUserRequest {
   specialistId: number;
   contactNumber: string;
   status: string;
+  medicalLicense: string;
+  hospitalId: number;
+}
+
+export interface UpdateDoctorProfileRequest {
+  name: string;
+  specialistId: number;
+  contactNumber: string;
   medicalLicense: string;
   hospitalId: number;
 }
