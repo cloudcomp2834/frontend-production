@@ -22,7 +22,14 @@ const formatMonthLabel = (date: Date) =>
 
 const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
 const endOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0);
+const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 const TIME_STEP_MINUTES = 15;
+const BOOKING_CUTOFF_HOURS = 24;
+
+const addHours = (date: Date, hours: number) =>
+  new Date(date.getTime() + hours * 60 * 60 * 1000);
+
+const getBookingCutoff = () => addHours(new Date(), BOOKING_CUTOFF_HOURS);
 
 const timeToMinutes = (time: string) => {
   const [hours, minutes] = time.substring(0, 5).split(':').map(Number);
@@ -34,6 +41,45 @@ const minutesToTime = (minutes: number) => {
   const mins = minutes % 60;
   return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 };
+
+const ceilToStep = (minutes: number) =>
+  Math.ceil(minutes / TIME_STEP_MINUTES) * TIME_STEP_MINUTES;
+
+const parseSlotDateTime = (date: string, time: string) => {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hours, minutes] = time.substring(0, 5).split(':').map(Number);
+  return new Date(year, month - 1, day, hours, minutes);
+};
+
+const isBeforeBookingCutoff = (date: string, time: string, cutoff: Date) =>
+  parseSlotDateTime(date, time) < cutoff;
+
+const isBeforeToday = (date: string) =>
+  parseSlotDateTime(date, '00:00') < startOfDay(new Date());
+
+const isBeforeNow = (date: string, time: string) =>
+  parseSlotDateTime(date, time) < new Date();
+
+const getBookableSlots = (slots: DoctorAvailabilityDto[], cutoff: Date): DoctorAvailabilityDto[] =>
+  slots.flatMap(slot => {
+    const slotEnd = parseSlotDateTime(slot.date, slot.endTime);
+    if (slotEnd <= cutoff) return [];
+
+    const slotStart = parseSlotDateTime(slot.date, slot.startTime);
+    const cutoffTime = `${cutoff.getHours()}:${cutoff.getMinutes()}`;
+    const adjustedStart = slotStart < cutoff
+      ? minutesToTime(ceilToStep(timeToMinutes(cutoffTime)))
+      : slot.startTime.substring(0, 5);
+    const adjustedStartMinutes = timeToMinutes(adjustedStart);
+    const endMinutes = timeToMinutes(slot.endTime);
+
+    if (adjustedStartMinutes + TIME_STEP_MINUTES > endMinutes) return [];
+
+    return [{
+      ...slot,
+      startTime: `${adjustedStart}:00`,
+    }];
+  });
 
 const getStartTimeOptions = (slots: DoctorAvailabilityDto[]) => {
   const options = slots.flatMap(slot => {
@@ -93,7 +139,7 @@ export const PatientBookingPage = () => {
   const [calendarAvailableSlots, setCalendarAvailableSlots] = useState<DoctorAvailabilityDto[]>([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
+  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(getBookingCutoff()));
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -145,9 +191,9 @@ export const PatientBookingPage = () => {
       return;
     }
 
-    const today = new Date();
+    const cutoff = getBookingCutoff();
     const monthStart = startOfMonth(month);
-    const fromDate = monthStart < startOfMonth(today) ? today : monthStart;
+    const fromDate = monthStart < startOfMonth(cutoff) ? cutoff : monthStart;
     const toDate = endOfMonth(month);
 
     setAvailabilityLoading(true);
@@ -212,16 +258,19 @@ export const PatientBookingPage = () => {
       setAvailableSlots([]);
       setCalendarAvailableSlots([]);
       setCalendarOpen(false);
-      setCalendarMonth(startOfMonth(new Date()));
+      setCalendarMonth(startOfMonth(getBookingCutoff()));
     }
   };
 
-  const availableDates = new Set(calendarAvailableSlots.map(slot => slot.date));
+  const bookingCutoff = getBookingCutoff();
+  const bookableSlots = getBookableSlots(availableSlots, bookingCutoff);
+  const bookableCalendarSlots = getBookableSlots(calendarAvailableSlots, bookingCutoff);
+  const availableDates = new Set(bookableCalendarSlots.map(slot => slot.date));
   const firstCalendarDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
   const calendarStartOffset = firstCalendarDay.getDay();
   const daysInCalendarMonth = endOfMonth(calendarMonth).getDate();
-  const todayDate = formatDate(new Date());
-  const canGoToPreviousMonth = startOfMonth(calendarMonth) > startOfMonth(new Date());
+  const cutoffDate = formatDate(bookingCutoff);
+  const canGoToPreviousMonth = startOfMonth(calendarMonth) > startOfMonth(bookingCutoff);
 
   const handleDateSelect = (date: string) => {
     setFormData(prev => ({
@@ -256,12 +305,27 @@ export const PatientBookingPage = () => {
       return;
     }
 
+    if (isBeforeToday(formData.appointmentDate)) {
+      setError('Cannot book an appointment before today');
+      return;
+    }
+
+    if (isBeforeNow(formData.appointmentDate, formData.startTime)) {
+      setError('Cannot book an appointment before the current date and time');
+      return;
+    }
+
     if (formData.startTime >= formData.endTime) {
       setError('End time must be after start time');
       return;
     }
 
-    if (!findContainingSlot(availableSlots, formData.startTime, formData.endTime)) {
+    if (isBeforeBookingCutoff(formData.appointmentDate, formData.startTime, getBookingCutoff())) {
+      setError('Appointments must be booked at least 24 hours in advance');
+      return;
+    }
+
+    if (!findContainingSlot(bookableSlots, formData.startTime, formData.endTime)) {
       setError('Selected time must stay within one available time slot');
       return;
     }
@@ -290,8 +354,8 @@ export const PatientBookingPage = () => {
   };
 
   const selectedDoctor = doctors.find(d => d.doctorId === formData.doctorId);
-  const startTimeOptions = getStartTimeOptions(availableSlots);
-  const selectedStartSlot = findContainingSlot(availableSlots, formData.startTime);
+  const startTimeOptions = getStartTimeOptions(bookableSlots);
+  const selectedStartSlot = findContainingSlot(bookableSlots, formData.startTime);
   const endTimeOptions = getEndTimeOptions(selectedStartSlot, formData.startTime);
 
   if (loading) {
@@ -424,9 +488,9 @@ export const PatientBookingPage = () => {
                     const day = index + 1;
                     const date = formatDate(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), day));
                     const isAvailable = availableDates.has(date);
-                    const isPast = date < todayDate;
+                    const isBeforeCutoffDate = date < cutoffDate;
                     const isSelected = formData.appointmentDate === date;
-                    const disabled = !isAvailable || isPast || availabilityLoading;
+                    const disabled = !isAvailable || isBeforeCutoffDate || availabilityLoading;
 
                     return (
                       <button
@@ -437,7 +501,7 @@ export const PatientBookingPage = () => {
                         className={`h-9 rounded-md text-sm ${
                           isSelected
                             ? 'bg-primary text-white'
-                            : isAvailable && !isPast
+                            : isAvailable && !isBeforeCutoffDate
                               ? 'bg-pantai-50 text-pantai-700 hover:bg-pantai-100'
                               : 'cursor-not-allowed bg-gray-50 text-gray-300'
                         }`}
@@ -464,25 +528,25 @@ export const PatientBookingPage = () => {
         </div>
 
         {/* Available Schedule Slots */}
-        {formData.appointmentDate && availableSlots.length > 0 && (
+        {formData.appointmentDate && bookableSlots.length > 0 && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <h4 className="font-semibold text-gray-900 mb-2">Available Time Slots on {formData.appointmentDate}:</h4>
             <div className="space-y-1 text-sm text-gray-700">
-              {availableSlots.map((slot, index) => (
+              {bookableSlots.map((slot, index) => (
                 <div key={`${slot.date}-${slot.startTime}-${slot.endTime}-${index}`}>
                   • {slot.startTime.substring(0, 5)} - {slot.endTime.substring(0, 5)}
                 </div>
               ))}
             </div>
             <p className="text-xs text-gray-600 mt-2">
-              Existing appointments have already been removed from these slots.
+              Existing appointments and the 24-hour booking cutoff have already been removed from these slots.
             </p>
           </div>
         )}
 
-        {formData.appointmentDate && availableSlots.length === 0 && (
+        {formData.appointmentDate && bookableSlots.length === 0 && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-            No available time slots for this date. Please choose a different date or doctor.
+            No available time slots for this date. Appointments must be booked at least 24 hours in advance.
           </div>
         )}
 
@@ -498,7 +562,7 @@ export const PatientBookingPage = () => {
               value={formData.startTime}
               onChange={handleChange}
               className="input-field"
-              disabled={!formData.appointmentDate || availableSlots.length === 0}
+              disabled={!formData.appointmentDate || bookableSlots.length === 0}
               required
             >
               <option value="">Select start time</option>
@@ -560,7 +624,7 @@ export const PatientBookingPage = () => {
           <button
             type="submit"
             className="btn-primary"
-            disabled={submitting || availableSlots.length === 0}
+            disabled={submitting || bookableSlots.length === 0}
           >
             {submitting ? 'Booking...' : 'Book Appointment'}
           </button>

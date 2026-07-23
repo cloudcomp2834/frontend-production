@@ -3,12 +3,10 @@ import { Link } from 'react-router-dom';
 import { doctorService, referenceService } from '../../services';
 import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
-import { useConfirm } from '../../components/ui/ConfirmProvider';
 import type { DoctorDto, HospitalDto, SpecialismDto } from '../../types';
 
 export const AdminDoctorsPage = () => {
   const toast = useToast();
-  const confirm = useConfirm();
   const [doctors, setDoctors] = useState<DoctorDto[]>([]);
   const [hospitals, setHospitals] = useState<HospitalDto[]>([]);
   const [specialisms, setSpecialisms] = useState<SpecialismDto[]>([]);
@@ -44,23 +42,6 @@ export const AdminDoctorsPage = () => {
       await loadData();
     } catch (err) {
       const message = getErrorMessage(err, 'Failed to update doctor status');
-      if (message) toast.error(message);
-    }
-  };
-
-  const handleDelete = async (doctorId: number, doctorName: string) => {
-    if (!(await confirm({
-      title: 'Delete Doctor',
-      message: `Are you sure you want to delete ${doctorName}? This action cannot be undone.`,
-      danger: true,
-    }))) {
-      return;
-    }
-    try {
-      await doctorService.delete(doctorId);
-      await loadData();
-    } catch (err) {
-      const message = getErrorMessage(err, 'Failed to delete doctor');
       if (message) toast.error(message);
     }
   };
@@ -167,12 +148,6 @@ export const AdminDoctorsPage = () => {
                       className="text-yellow-600 hover:text-yellow-900"
                     >
                       {doctor.status === 'Active' ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(doctor.doctorId, doctor.name)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
                     </button>
                   </td>
                 </tr>

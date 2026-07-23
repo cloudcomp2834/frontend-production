@@ -20,7 +20,8 @@ import type {
   SpecialismDto,
   AppointmentTypeDto,
   UserDto,
-  CreateUserRequest,
+  CreateAdminUserRequest,
+  AdminUserDto,
   MedicalRecordDto,
   MedicalRecordFileDto,
   CompleteAppointmentRequest,
@@ -108,12 +109,6 @@ export const doctorService = {
       body: JSON.stringify({ status }),
     });
     return data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await apiFetch(`/api/doctor/${id}`, {
-      method: 'DELETE',
-    });
   },
 };
 
@@ -278,8 +273,16 @@ export const userService = {
     return data;
   },
 
-  create: async (userData: CreateUserRequest): Promise<UserDto> => {
-    const { data } = await apiFetch('/api/user', {
+  createAdmin: async (userData: CreateAdminUserRequest): Promise<AdminUserDto> => {
+    const { data } = await apiFetch('/api/user/admin', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+    return data;
+  },
+
+  createPatient: async (userData: CreatePatientUserRequest): Promise<PatientUserDto> => {
+    const { data } = await apiFetch('/api/user/patient', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
