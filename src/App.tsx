@@ -22,6 +22,7 @@ import { AdminDoctorSchedulePage } from './pages/admin/AdminDoctorSchedulePage';
 import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminAddUserPage } from './pages/admin/AdminAddUserPage';
+import { AdminPaymentReportsPage } from './pages/admin/AdminPaymentReportsPage';
 
 // Doctor pages
 import { DoctorDashboard } from './pages/doctor/DoctorDashboard';
@@ -137,6 +138,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['Admin']}>
                   <AdminAddUserPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/payment-reports"
+              element={
+                <ProtectedRoute allowedRoles={['Admin']}>
+                  <AdminPaymentReportsPage />
                 </ProtectedRoute>
               }
             />

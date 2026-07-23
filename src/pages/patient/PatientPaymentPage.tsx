@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { appointmentService, paymentService } from '../../services';
-import { getErrorMessage } from '../../services/api';
+import { ApiError, getErrorMessage } from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import type { AppointmentDto } from '../../types';
 
@@ -15,6 +15,7 @@ export const PatientPaymentPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [invoiceUrl, setInvoiceUrl] = useState('');
   const [receiptUrl, setReceiptUrl] = useState('');
+  const [checkingInvoice, setCheckingInvoice] = useState(false);
 
   useEffect(() => {
     if (appointmentId) {
@@ -45,15 +46,38 @@ export const PatientPaymentPage = () => {
     if (!appointmentId) return;
 
     try {
-      const [invoiceData, receiptData] = await Promise.all([
-        paymentService.getInvoiceUrl(parseInt(appointmentId)),
-        paymentService.getReceiptUrl(parseInt(appointmentId)),
-      ]);
-      if (invoiceData.invoiceUrl) setInvoiceUrl(invoiceData.invoiceUrl);
+      const receiptData = await paymentService.getReceiptUrl(parseInt(appointmentId));
       if (receiptData.receiptUrl) setReceiptUrl(receiptData.receiptUrl);
     } catch (err) {
-      const message = getErrorMessage(err, 'Failed to load payment details');
+      const message = getErrorMessage(err, 'Failed to load payment receipt');
       if (message) toast.error(message);
+    }
+
+    try {
+      const invoiceData = await paymentService.getInvoiceUrl(parseInt(appointmentId));
+      if (invoiceData.invoiceUrl) setInvoiceUrl(invoiceData.invoiceUrl);
+    } catch (err) {
+      // The invoice PDF is generated asynchronously after payment - a 404 here just means
+      // it isn't ready yet, not a real failure, so it shouldn't show as an error.
+      if (err instanceof ApiError && err.status === 404) return;
+      const message = getErrorMessage(err, 'Failed to load invoice');
+      if (message) toast.error(message);
+    }
+  };
+
+  const handleCheckInvoice = async () => {
+    if (!appointmentId) return;
+
+    setCheckingInvoice(true);
+    try {
+      const invoiceData = await paymentService.getInvoiceUrl(parseInt(appointmentId));
+      if (invoiceData.invoiceUrl) setInvoiceUrl(invoiceData.invoiceUrl);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return;
+      const message = getErrorMessage(err, 'Failed to check invoice status');
+      if (message) toast.error(message);
+    } finally {
+      setCheckingInvoice(false);
     }
   };
 
@@ -224,7 +248,7 @@ export const PatientPaymentPage = () => {
           <h2 className="text-xl font-semibold mb-4">Download Documents</h2>
           
           <div className="space-y-3">
-            {invoiceUrl && (
+            {invoiceUrl ? (
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900">Invoice (PDF)</p>
@@ -238,6 +262,20 @@ export const PatientPaymentPage = () => {
                 >
                   Download Invoice
                 </a>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">Invoice (PDF)</p>
+                  <p className="text-sm text-gray-600">Still being generated - this usually takes a few seconds</p>
+                </div>
+                <button
+                  onClick={handleCheckInvoice}
+                  className="btn-secondary text-sm"
+                  disabled={checkingInvoice}
+                >
+                  {checkingInvoice ? 'Checking...' : 'Check again'}
+                </button>
               </div>
             )}
 

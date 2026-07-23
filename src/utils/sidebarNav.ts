@@ -7,6 +7,7 @@ import {
   CalendarCheck,
   CalendarPlus,
   UserCircle,
+  CreditCard,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -22,6 +23,7 @@ export const ADMIN_NAV: NavItem[] = [
   { label: 'Appointments', to: '/admin/appointments', icon: CalendarDays },
   { label: 'Doctors', to: '/admin/doctors', icon: Stethoscope },
   { label: 'Users', to: '/admin/users', icon: Users },
+  { label: 'Payment Reports', to: '/admin/payment-reports', icon: CreditCard },
 ];
 
 export const DOCTOR_NAV: NavItem[] = [
