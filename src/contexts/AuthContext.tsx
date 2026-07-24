@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { jwtDecode } from 'jwt-decode';
 import type { DecodedToken, LoginRequest } from '../types';
 import { authService } from '../services';
@@ -94,12 +95,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Decode token to get user info
     const decoded = jwtDecode<DecodedToken>(response.token);
 
-    setToken(response.token);
-    setRole(response.role);
-    setUsername(decoded.unique_name);
-    setDoctorId(decoded.doctor_id ? parseInt(decoded.doctor_id) : null);
-    setDoctorStatus(decoded.doctor_status ?? null);
-    setPatientId(decoded.patient_id ? parseInt(decoded.patient_id) : null);
+    // flushSync forces this state update to commit synchronously, before the caller's
+    // navigate() call runs - without it, React may not have re-rendered ProtectedRoute
+    // and its children with the new auth state by the time the destination page mounts
+    // and immediately fires off its own API calls, occasionally racing ahead of the
+    // committed session and getting an unauthorized response back.
+    flushSync(() => {
+      setToken(response.token);
+      setRole(response.role);
+      setUsername(decoded.unique_name);
+      setDoctorId(decoded.doctor_id ? parseInt(decoded.doctor_id) : null);
+      setDoctorStatus(decoded.doctor_status ?? null);
+      setPatientId(decoded.patient_id ? parseInt(decoded.patient_id) : null);
+    });
 
     return response.role;
   };

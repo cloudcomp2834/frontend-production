@@ -36,13 +36,23 @@ interface ApiFetchConfig {
   // session expired", so it must not clear storage / show the session-expired
   // toast / force a redirect. The real error body is returned to the caller.
   suppressSessionHandling?: boolean;
+  // Internal - marks a call as already having been retried once, so the 401 retry
+  // below can't loop.
+  isRetry?: boolean;
 }
+
+const RETRY_DELAY_MS = 200;
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Guards against firing the "session expired" toast + redirect more than once
 // when several requests happen to 401 around the same time.
 let sessionExpiredHandled = false;
 
-export const apiFetch = async (path: string, options: RequestInit = {}, config: ApiFetchConfig = {}) => {
+export const apiFetch = async (
+  path: string,
+  options: RequestInit = {},
+  config: ApiFetchConfig = {}
+): Promise<{ status: number; data: any }> => {
   const token = localStorage.getItem('token');
 
   const headers: Record<string, string> = {
@@ -73,6 +83,17 @@ export const apiFetch = async (path: string, options: RequestInit = {}, config: 
   // this and fall through to the normal error handling below instead, so the
   // real backend error (e.g. "Invalid username or password") reaches the caller.
   if (res.status === 401 && !config.suppressSessionHandling) {
+    // Safety net for a request that raced ahead of a very recent login (see the
+    // flushSync in AuthContext.login for the primary fix) - a token still sitting in
+    // storage means this is very unlikely to be a real logged-out session, so retry
+    // once after a short delay before treating it as a genuine session expiry. A truly
+    // expired/invalid session has nothing to gain from the retry and will 401 again,
+    // falling through to the normal handling below exactly as before.
+    if (!config.isRetry && localStorage.getItem('token')) {
+      await delay(RETRY_DELAY_MS);
+      return apiFetch(path, options, { ...config, isRetry: true });
+    }
+
     if (!sessionExpiredHandled) {
       sessionExpiredHandled = true;
       triggerForceLogout(SESSION_EXPIRED_MESSAGE);
