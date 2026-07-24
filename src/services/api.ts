@@ -1,6 +1,23 @@
+import * as Sentry from '@sentry/react';
 import { triggerForceLogout, SESSION_EXPIRED_MESSAGE } from '../contexts/authBus';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://13-239-141-189.sslip.io';
+
+// Backend responses worth alerting on - permission problems and server-side failures.
+// Deliberately excludes 400 (validation - wrong input, not a bug) and 404 (frequently an
+// expected "doesn't exist yet" state in this app, e.g. no profile picture uploaded yet).
+// 401 is excluded too: every 401 this app produces is either the synthetic session-expired
+// flow below (routine, happens to every user eventually, not a bug) or login's own
+// wrong-password attempt (suppressSessionHandling) - neither is actionable as an error
+// report. Add 401 back here if that stops being true.
+const shouldReportToSentry = (status: number) => status === 403 || status >= 500;
+
+const reportApiError = (method: string, path: string, status: number, data: unknown) => {
+  Sentry.captureMessage(`API error: ${method} ${path} -> ${status}`, {
+    level: 'error',
+    extra: { status, path, method, data },
+  });
+};
 
 export class ApiError extends Error {
   status: number;
@@ -74,6 +91,9 @@ export const apiFetch = async (path: string, options: RequestInit = {}, config: 
 
   // Throw error for non-2xx status
   if (!res.ok) {
+    if (shouldReportToSentry(res.status)) {
+      reportApiError(options.method ?? 'GET', path, res.status, data);
+    }
     throw new ApiError(res.status, data);
   }
 
